@@ -74,6 +74,12 @@ a:hover{text-decoration:underline}
 .status-pill .dot{width:8px;height:8px;border-radius:50%;background:#f41216;animation:pulse 2s ease-in-out infinite}
 .status-pill.count strong{color:#f41216;font-size:16px}
 .refresh-text{font-size:11px;color:#6b7280}
+.sort-select{
+    background:rgba(13,17,23,.8);color:#e5e7eb;border:1px solid #30363d;
+    border-radius:6px;padding:4px 8px;font-size:12px;font-weight:600;
+    cursor:pointer;outline:none;font-family:inherit;
+}
+.sort-select:focus{border-color:rgba(244,18,22,.4)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* ── Container ── */
@@ -155,6 +161,12 @@ a:hover{text-decoration:underline}
         <div class="status-pill"><span class="dot"></span> ADMIN VIEW</div>
         <div class="status-pill count"><strong id="session-count">—</strong>&nbsp;Sessions</div>
         <div class="refresh-text" id="refresh-text">Refreshing…</div>
+        <select class="sort-select" id="sort-select">
+            <option value="active-desc">Active: Newest</option>
+            <option value="active-asc">Active: Oldest</option>
+            <option value="players">Most Players</option>
+            <option value="created">Newest Created</option>
+        </select>
     </div>
 
     <div class="container">
@@ -178,6 +190,19 @@ a:hover{text-decoration:underline}
     var adminKey = '';
     var content, countEl, refreshEl, errorToast;
     var countdown = 15;
+    var rawSessions = [];
+
+    function sortSessions(sessions) {
+        var mode = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'active-desc';
+        var sorted = sessions.slice();
+        switch (mode) {
+            case 'active-desc': sorted.sort(function(a, b) { return b.lastActivity - a.lastActivity; }); break;
+            case 'active-asc': sorted.sort(function(a, b) { return a.lastActivity - b.lastActivity; }); break;
+            case 'players': sorted.sort(function(a, b) { return b.playerCount - a.playerCount || b.lastActivity - a.lastActivity; }); break;
+            case 'created': sorted.sort(function(a, b) { return b.createdAt - a.createdAt; }); break;
+        }
+        return sorted;
+    }
 
     // ── Auth ──
     window.doAuth = function() {
@@ -199,7 +224,8 @@ a:hover{text-decoration:underline}
                         document.getElementById('auth-overlay').style.display = 'none';
                         document.getElementById('app').style.display = 'block';
                         initApp();
-                        renderSessions(data.sessions || []);
+                        rawSessions = data.sessions || [];
+                        renderSessions(sortSessions(rawSessions));
                         return;
                     }
                 } catch (e) {}
@@ -244,6 +270,9 @@ a:hover{text-decoration:underline}
         countEl = document.getElementById('session-count');
         refreshEl = document.getElementById('refresh-text');
         errorToast = document.getElementById('error-toast');
+        document.getElementById('sort-select').addEventListener('change', function() {
+            if (rawSessions.length) renderSessions(sortSessions(rawSessions));
+        });
         startCountdown();
     }
 
@@ -315,7 +344,7 @@ a:hover{text-decoration:underline}
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    if (data.success) { renderSessions(data.sessions || []); countdown = Math.floor(REFRESH_INTERVAL / 1000); }
+                    if (data.success) { rawSessions = data.sessions || []; renderSessions(sortSessions(rawSessions)); countdown = Math.floor(REFRESH_INTERVAL / 1000); }
                     else showError(data.error || 'Failed to load');
                 } catch (e) { showError('Invalid response'); }
             } else if (xhr.status === 403) {
