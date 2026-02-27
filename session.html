@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>FS Fire — Session Detail</title>
+<meta name="theme-color" content="#0d1117"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+    font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    background:#0d1117;color:#e5e7eb;min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+}
+a{color:#3b82f6;text-decoration:none}
+
+/* ── Top Bar ── */
+.top-bar{
+    background:#161b22;border-bottom:1px solid #30363d;
+    padding:12px 16px;display:flex;align-items:center;gap:12px;
+    position:sticky;top:0;z-index:1000;
+}
+.back-btn{
+    display:flex;align-items:center;gap:4px;color:#9ca3af;
+    font-size:14px;font-weight:600;cursor:pointer;padding:6px 10px;
+    border-radius:6px;border:1px solid #30363d;background:transparent;
+    transition:border-color .15s,color .15s;
+}
+.back-btn:hover{border-color:rgba(244,18,22,.4);color:#f41216}
+.top-bar h1{font-size:16px;font-weight:700;color:#fff;flex:1}
+.top-bar h1 span{color:#f41216}
+.session-badge{
+    font-family:'Consolas','Courier New',monospace;font-size:14px;font-weight:700;
+    letter-spacing:2px;color:#f41216;background:rgba(244,18,22,.1);
+    padding:4px 10px;border-radius:6px;border:1px solid rgba(244,18,22,.2);
+}
+
+/* ── Map ── */
+#map{width:100%;height:45vh;min-height:280px;background:#0d1117;z-index:1}
+.leaflet-control-attribution{display:none!important}
+
+/* ── Map Legend ── */
+.map-legend{
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    padding:8px 16px;background:#161b22;border-bottom:1px solid #30363d;
+    font-size:12px;font-weight:600;color:#9ca3af;
+}
+.legend-item{display:flex;align-items:center;gap:4px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-dot.player{background:#3b82f6}
+.legend-dot.fire{background:#f41216}
+.legend-dot.prop{background:#22c55e}
+
+/* ── Info Section ── */
+.info-container{max-width:720px;margin:0 auto;padding:12px 16px}
+
+.info-card{
+    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;
+    padding:14px 16px;margin-bottom:10px;
+}
+.info-card h3{font-size:13px;font-weight:700;color:#f41216;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid rgba(244,18,22,.15);padding-bottom:6px}
+
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:14px}
+.info-row .label{color:#9ca3af}
+.info-row .value{color:#e5e7eb;font-weight:600;text-align:right}
+
+.description-text{color:#9ca3af;font-size:14px;line-height:1.6;font-style:italic}
+
+/* ── Stats Row ── */
+.stats-row{display:flex;gap:8px;margin-bottom:10px}
+.stat-box{
+    flex:1;text-align:center;padding:12px 8px;
+    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;
+}
+.stat-box .num{font-size:24px;font-weight:800;display:block;margin-bottom:2px}
+.stat-box .lbl{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+.stat-box.players .num{color:#3b82f6}
+.stat-box.fires .num{color:#f41216}
+.stat-box.props .num{color:#22c55e}
+
+/* ── Player List ── */
+.player-item{
+    display:flex;align-items:center;gap:10px;padding:8px 0;
+    border-bottom:1px solid rgba(48,54,61,.3);
+}
+.player-item:last-child{border-bottom:none}
+.player-avatar{
+    width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:14px;color:#fff;flex-shrink:0;
+}
+.player-avatar.host{background:rgba(244,18,22,.3);border:2px solid #f41216}
+.player-avatar.guest{background:rgba(59,130,246,.2);border:2px solid rgba(59,130,246,.4)}
+.player-name{font-size:14px;font-weight:600;color:#e5e7eb;flex:1}
+.player-badge{font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:4px}
+.player-badge.host{background:rgba(244,18,22,.15);color:#f41216}
+.player-badge.guest{background:rgba(59,130,246,.1);color:#3b82f6}
+
+/* ── Loading & Error ── */
+.loading{text-align:center;padding:80px 20px;color:#6b7280}
+.spinner{width:32px;height:32px;border:3px solid #30363d;border-top-color:#f41216;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-state{text-align:center;padding:60px 20px;color:#ef4444}
+.error-state h3{margin-bottom:8px}
+
+/* ── Refresh indicator ── */
+.refresh-bar{text-align:center;padding:6px;font-size:11px;color:#4b5563}
+
+/* ── Leaflet custom markers ── */
+.marker-player{
+    background:rgba(59,130,246,.9);border:2px solid #3b82f6;border-radius:50%;
+    width:14px!important;height:14px!important;box-shadow:0 0 8px rgba(59,130,246,.5);
+}
+.marker-fire{
+    width:18px!important;height:18px!important;display:flex;align-items:center;justify-content:center;
+}
+.marker-prop{
+    background:rgba(34,197,94,.8);border:2px solid #22c55e;border-radius:3px;
+    width:12px!important;height:12px!important;box-shadow:0 0 6px rgba(34,197,94,.4);
+}
+.player-label{
+    background:rgba(13,17,23,.85);color:#3b82f6;padding:2px 6px;border-radius:4px;
+    font-size:11px;font-weight:700;white-space:nowrap;border:1px solid rgba(59,130,246,.3);
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    <button class="back-btn" onclick="window.location.href='index.html'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+    </button>
+    <h1>FS <span>Fire</span></h1>
+    <span class="session-badge" id="session-badge">--------</span>
+</div>
+
+<div id="map"></div>
+
+<div class="map-legend">
+    <div class="legend-item"><span class="legend-dot player"></span>Players</div>
+    <div class="legend-item"><span class="legend-dot fire"></span>Fires</div>
+    <div class="legend-item"><span class="legend-dot prop"></span>Props</div>
+</div>
+
+<div class="info-container" id="info-container">
+    <div class="loading"><div class="spinner"></div>Loading session…</div>
+</div>
+
+<div class="refresh-bar" id="refresh-bar">Auto-refresh in 10s</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    // ═══════════════════════════════════════════
+    // CONFIGURATION — Update this to your Cloud Function URL
+    // ═══════════════════════════════════════════
+    var API_BASE = 'https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer';
+    // ═══════════════════════════════════════════
+
+    var REFRESH_INTERVAL = 10000;
+    var sessionId = new URLSearchParams(window.location.search).get('id');
+    var adminKey = new URLSearchParams(window.location.search).get('adminKey') || '';
+    var infoContainer = document.getElementById('info-container');
+    var refreshBar = document.getElementById('refresh-bar');
+    var countdown = 10;
+    var map, playerLayer, fireLayer, propLayer;
+
+    document.getElementById('session-badge').textContent = sessionId || '???';
+
+    if (!sessionId) {
+        infoContainer.innerHTML = '<div class="error-state"><h3>No Session ID</h3><p>Return to the <a href="index.html">session list</a>.</p></div>';
+        return;
+    }
+
+    // ── Init Map ──
+    map = L.map('map', {
+        center: [35, -100],
+        zoom: 4,
+        zoomControl: true,
+        attributionControl: false
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+    }).addTo(map);
+
+    playerLayer = L.layerGroup().addTo(map);
+    fireLayer = L.layerGroup().addTo(map);
+    propLayer = L.layerGroup().addTo(map);
+
+    function fireIcon() {
+        return L.divIcon({
+            className: 'marker-fire',
+            html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="#f41216"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+    }
+
+    function playerIcon() {
+        return L.divIcon({ className: 'marker-player', iconSize: [14, 14], iconAnchor: [7, 7] });
+    }
+
+    function propIcon() {
+        return L.divIcon({ className: 'marker-prop', iconSize: [12, 12], iconAnchor: [6, 6] });
+    }
+
+    function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function timeSince(ts) {
+        var mins = Math.floor((Date.now() - ts) / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm';
+    }
+
+    function platformLabel(p) {
+        if (p === 'msfs2024') return 'MSFS 2024';
+        if (p === 'msfs2020') return 'MSFS 2020';
+        return p ? p.toUpperCase() : 'MSFS';
+    }
+
+    function updateMap(data) {
+        playerLayer.clearLayers();
+        fireLayer.clearLayers();
+        propLayer.clearLayers();
+
+        var bounds = [];
+
+        // Fires
+        for (var i = 0; i < data.fires.length; i++) {
+            var f = data.fires[i];
+            if (f.lat && f.lon) {
+                var fm = L.marker([f.lat, f.lon], { icon: fireIcon() })
+                    .bindPopup('<b style="color:#f41216">Fire</b><br>Type: ' + escHtml(f.type || 'unknown'));
+                fireLayer.addLayer(fm);
+                bounds.push([f.lat, f.lon]);
+            }
+        }
+
+        // Props
+        for (var j = 0; j < data.props.length; j++) {
+            var p = data.props[j];
+            if (p.lat && p.lon) {
+                var pm = L.marker([p.lat, p.lon], { icon: propIcon() })
+                    .bindPopup('<b style="color:#22c55e">Prop</b><br>' + escHtml(p.propName || p.propType || 'Unknown'));
+                propLayer.addLayer(pm);
+                bounds.push([p.lat, p.lon]);
+            }
+        }
+
+        // Players
+        for (var k = 0; k < data.players.length; k++) {
+            var pl = data.players[k];
+            if (pl.lat != null && pl.lon != null) {
+                var plm = L.marker([pl.lat, pl.lon], { icon: playerIcon() })
+                    .bindPopup('<b style="color:#3b82f6">' + escHtml(pl.name) + '</b>' + (pl.isHost ? ' (Host)' : ''));
+                playerLayer.addLayer(plm);
+
+                // Name label
+                var label = L.marker([pl.lat, pl.lon], {
+                    icon: L.divIcon({
+                        className: 'player-label',
+                        html: escHtml(pl.name),
+                        iconSize: null,
+                        iconAnchor: [-10, 6]
+                    })
+                });
+                playerLayer.addLayer(label);
+                bounds.push([pl.lat, pl.lon]);
+            }
+        }
+
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        }
+    }
+
+    function renderInfo(data) {
+        var html =
+            '<div class="stats-row">' +
+                '<div class="stat-box players"><span class="num">' + data.players.length + '</span><span class="lbl">Players</span></div>' +
+                '<div class="stat-box fires"><span class="num">' + data.fires.length + '</span><span class="lbl">Fires</span></div>' +
+                '<div class="stat-box props"><span class="num">' + data.props.length + '</span><span class="lbl">Props</span></div>' +
+            '</div>';
+
+        // Session Info
+        html += '<div class="info-card"><h3>Session Info</h3>';
+        html += '<div class="info-row"><span class="label">Host</span><span class="value">' + escHtml(data.hostName) + '</span></div>';
+        html += '<div class="info-row"><span class="label">Platform</span><span class="value">' + platformLabel(data.platform) + '</span></div>';
+        html += '<div class="info-row"><span class="label">Visibility</span><span class="value">' + (data.visibility || 'public').toUpperCase() + '</span></div>';
+        html += '<div class="info-row"><span class="label">Created</span><span class="value">' + timeSince(data.createdAt) + '</span></div>';
+        html += '<div class="info-row"><span class="label">Live Fires</span><span class="value">' + (data.liveFiresEnabled ? 'Enabled' : 'Disabled') + '</span></div>';
+        if (data.description) {
+            html += '<div style="margin-top:8px"><div class="description-text">"' + escHtml(data.description) + '"</div></div>';
+        }
+        html += '</div>';
+
+        // Player List
+        html += '<div class="info-card"><h3>Players (' + data.players.length + ')</h3>';
+        if (data.players.length === 0) {
+            html += '<div style="color:#6b7280;font-size:14px;padding:8px 0;">No players connected</div>';
+        } else {
+            for (var i = 0; i < data.players.length; i++) {
+                var p = data.players[i];
+                var initial = (p.name || '?').charAt(0).toUpperCase();
+                var role = p.isHost ? 'host' : 'guest';
+                html +=
+                    '<div class="player-item">' +
+                        '<div class="player-avatar ' + role + '">' + initial + '</div>' +
+                        '<span class="player-name">' + escHtml(p.name) + '</span>' +
+                        '<span class="player-badge ' + role + '">' + (p.isHost ? 'HOST' : 'GUEST') + '</span>' +
+                    '</div>';
+            }
+        }
+        html += '</div>';
+
+        infoContainer.innerHTML = html;
+    }
+
+    function fetchDetail() {
+        refreshBar.textContent = 'Refreshing…';
+        var url = API_BASE + '/session/details?sessionId=' + encodeURIComponent(sessionId);
+        if (adminKey) url += '&adminKey=' + encodeURIComponent(adminKey);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 10000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        updateMap(data);
+                        renderInfo(data);
+                        countdown = Math.floor(REFRESH_INTERVAL / 1000);
+                    } else {
+                        infoContainer.innerHTML = '<div class="error-state"><h3>' + (data.error || 'Session not found') + '</h3><p><a href="index.html">Back to sessions</a></p></div>';
+                    }
+                } catch (e) {
+                    infoContainer.innerHTML = '<div class="error-state"><h3>Invalid response</h3></div>';
+                }
+            } else if (xhr.status === 404) {
+                infoContainer.innerHTML = '<div class="error-state"><h3>Session Not Found</h3><p>This session may have ended.<br/><a href="index.html">Back to sessions</a></p></div>';
+            } else if (xhr.status === 403) {
+                infoContainer.innerHTML = '<div class="error-state"><h3>Private Session</h3><p>This session is private.<br/><a href="index.html">Back to sessions</a></p></div>';
+            } else {
+                infoContainer.innerHTML = '<div class="error-state"><h3>Error ' + xhr.status + '</h3></div>';
+            }
+        };
+        xhr.onerror = function() {
+            infoContainer.innerHTML = '<div class="error-state"><h3>Network Error</h3><p>Check your connection.</p></div>';
+        };
+        xhr.send();
+    }
+
+    fetchDetail();
+    setInterval(function() {
+        countdown--;
+        if (countdown <= 0) {
+            fetchDetail();
+        } else {
+            refreshBar.textContent = 'Auto-refresh in ' + countdown + 's';
+        }
+    }, 1000);
+
+    // Fix Leaflet map rendering after layout settles
+    setTimeout(function() { map.invalidateSize(); }, 300);
+})();
+</script>
+</body>
+</html>

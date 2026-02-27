@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>FS Fire — Active Sessions</title>
+<meta name="description" content="Browse active FS Fire multiplayer firefighting sessions for Microsoft Flight Simulator."/>
+<meta name="theme-color" content="#0d1117"/>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+    font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    background:#0d1117;color:#e5e7eb;min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+}
+a{color:#3b82f6;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* ── Header ── */
+.header{
+    background:#161b22;border-bottom:1px solid #30363d;
+    padding:20px 16px 16px;text-align:center;position:sticky;top:0;z-index:10;
+}
+.header::after{
+    content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(244,18,22,.3) 50%,transparent);
+}
+.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.brand svg{width:28px;height:28px;fill:#f41216}
+.brand h1{font-size:22px;font-weight:800;letter-spacing:1px;color:#fff}
+.brand h1 span{color:#f41216}
+.subtitle{color:#6b7280;font-size:13px;letter-spacing:.3px}
+
+/* ── Status Bar ── */
+.status-bar{
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    padding:10px 16px;background:rgba(22,27,34,.6);
+}
+.status-pill{
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+    color:#9ca3af;
+}
+.status-pill .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 2s ease-in-out infinite}
+.status-pill.count{color:#e5e7eb}
+.status-pill.count strong{color:#f41216;font-size:16px}
+.refresh-text{font-size:11px;color:#6b7280}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Container ── */
+.container{max-width:960px;margin:0 auto;padding:12px}
+
+/* ── Session Cards ── */
+.session-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:560px){.session-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:840px){.session-grid{grid-template-columns:repeat(3,1fr)}}
+
+.session-card{
+    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;
+    padding:14px 16px;cursor:pointer;transition:border-color .15s,transform .1s,background .15s;
+    position:relative;overflow:hidden;
+}
+.session-card:hover{border-color:rgba(244,18,22,.4);background:rgba(22,27,34,1);transform:translateY(-1px)}
+.session-card:active{transform:translateY(0)}
+
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.session-code{
+    font-family:'Consolas','Courier New',monospace;font-size:16px;font-weight:700;
+    letter-spacing:2px;color:#f41216;
+}
+.platform-badge{
+    font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    padding:3px 8px;border-radius:4px;
+    background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);
+}
+
+.host-name{color:#9ca3af;font-size:13px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.host-name strong{color:#e5e7eb}
+
+.card-stats{display:flex;gap:12px;flex-wrap:wrap}
+.stat{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600}
+.stat svg{width:16px;height:16px;flex-shrink:0}
+.stat.players svg{fill:#3b82f6}
+.stat.players{color:#3b82f6}
+.stat.fires svg{fill:#f41216}
+.stat.fires{color:#f41216}
+.stat.props svg{fill:#22c55e}
+.stat.props{color:#22c55e}
+
+.card-arrow{
+    position:absolute;right:14px;bottom:14px;color:#30363d;transition:color .15s;
+}
+.session-card:hover .card-arrow{color:#f41216}
+
+/* ── Empty State ── */
+.empty-state{
+    text-align:center;padding:60px 20px;
+}
+.empty-state svg{width:64px;height:64px;fill:#30363d;margin-bottom:16px}
+.empty-state h3{color:#6b7280;font-size:18px;margin-bottom:8px}
+.empty-state p{color:#4b5563;font-size:14px;line-height:1.6}
+
+/* ── Loading ── */
+.loading{text-align:center;padding:60px 20px;color:#6b7280}
+.spinner{
+    width:32px;height:32px;border:3px solid #30363d;border-top-color:#f41216;
+    border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Footer ── */
+.footer{
+    text-align:center;padding:24px 16px;color:#4b5563;font-size:12px;
+    border-top:1px solid rgba(48,54,61,.4);margin-top:24px;
+}
+.footer a{color:#6b7280}
+
+/* ── Error Toast ── */
+.error-toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:rgba(239,68,68,.9);color:#fff;padding:10px 20px;border-radius:8px;
+    font-size:13px;font-weight:600;z-index:100;display:none;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.error-toast.visible{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">
+        <svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>
+        <h1>FS <span>Fire</span></h1>
+    </div>
+    <div class="subtitle">Active Multiplayer Sessions</div>
+</div>
+
+<div class="status-bar">
+    <div class="status-pill"><span class="dot"></span> LIVE</div>
+    <div class="status-pill count"><strong id="session-count">—</strong>&nbsp;Sessions</div>
+    <div class="refresh-text" id="refresh-text">Refreshing…</div>
+</div>
+
+<div class="container">
+    <div id="content">
+        <div class="loading"><div class="spinner"></div>Loading sessions…</div>
+    </div>
+</div>
+
+<div class="footer">
+    Powered by <a href="https://southoakco.com" target="_blank">FS Fire</a> · Firefighting simulation for MSFS
+</div>
+
+<div class="error-toast" id="error-toast"></div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ═══════════════════════════════════════════
+    // CONFIGURATION — Update this to your Cloud Function URL
+    // ═══════════════════════════════════════════
+    var API_BASE = 'https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer';
+    // ═══════════════════════════════════════════
+
+    var REFRESH_INTERVAL = 15000;
+    var content = document.getElementById('content');
+    var countEl = document.getElementById('session-count');
+    var refreshEl = document.getElementById('refresh-text');
+    var errorToast = document.getElementById('error-toast');
+    var refreshTimer = null;
+    var countdown = 15;
+
+    function showError(msg) {
+        errorToast.textContent = msg;
+        errorToast.classList.add('visible');
+        setTimeout(function() { errorToast.classList.remove('visible'); }, 4000);
+    }
+
+    function timeSince(ts) {
+        var mins = Math.floor((Date.now() - ts) / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return mins + 'm ago';
+        var hrs = Math.floor(mins / 60);
+        return hrs + 'h ' + (mins % 60) + 'm ago';
+    }
+
+    function platformLabel(p) {
+        if (!p) return 'MSFS';
+        if (p === 'msfs2024') return 'MSFS 2024';
+        if (p === 'msfs2020') return 'MSFS 2020';
+        return p.toUpperCase();
+    }
+
+    function renderSessions(sessions) {
+        countEl.textContent = sessions.length;
+
+        if (sessions.length === 0) {
+            content.innerHTML =
+                '<div class="empty-state">' +
+                    '<svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' +
+                    '<h3>No Active Sessions</h3>' +
+                    '<p>There are no public multiplayer sessions right now.<br/>Start one in FS Fire and it will appear here!</p>' +
+                '</div>';
+            return;
+        }
+
+        var html = '<div class="session-grid">';
+        for (var i = 0; i < sessions.length; i++) {
+            var s = sessions[i];
+            html +=
+                '<div class="session-card" data-id="' + s.sessionId + '" onclick="window.location.href=\'session.html?id=' + s.sessionId + '\'">' +
+                    '<div class="card-header">' +
+                        '<span class="session-code">' + s.sessionId + '</span>' +
+                        '<span class="platform-badge">' + platformLabel(s.platform) + '</span>' +
+                    '</div>' +
+                    '<div class="host-name">Host: <strong>' + escHtml(s.hostName) + '</strong></div>' +
+                    '<div class="card-stats">' +
+                        '<div class="stat players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' + s.playerCount + '</div>' +
+                        '<div class="stat fires"><svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' + s.fireCount + '</div>' +
+                        '<div class="stat props"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' + s.propCount + '</div>' +
+                    '</div>' +
+                    '<div class="card-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg></div>' +
+                '</div>';
+        }
+        html += '</div>';
+        content.innerHTML = html;
+    }
+
+    function escHtml(str) {
+        var d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    function fetchSessions() {
+        refreshEl.textContent = 'Refreshing…';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', API_BASE + '/sessions/public', true);
+        xhr.timeout = 10000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        renderSessions(data.sessions || []);
+                        countdown = Math.floor(REFRESH_INTERVAL / 1000);
+                    } else {
+                        showError(data.error || 'Failed to load sessions');
+                    }
+                } catch (e) {
+                    showError('Invalid response from server');
+                }
+            } else {
+                showError('Server error: ' + xhr.status);
+            }
+        };
+        xhr.onerror = function() { showError('Network error — check your connection'); };
+        xhr.ontimeout = function() { showError('Request timed out'); };
+        xhr.send();
+    }
+
+    function startCountdown() {
+        setInterval(function() {
+            countdown--;
+            if (countdown <= 0) {
+                fetchSessions();
+            } else {
+                refreshEl.textContent = 'Refresh in ' + countdown + 's';
+            }
+        }, 1000);
+    }
+
+    fetchSessions();
+    startCountdown();
+})();
+</script>
+</body>
+</html>
