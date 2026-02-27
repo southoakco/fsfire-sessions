@@ -39,6 +39,23 @@ a{color:#3b82f6;text-decoration:none}
 /* ── Map ── */
 #map{width:100%;height:45vh;min-height:280px;background:#0d1117;z-index:1}
 .leaflet-control-attribution{display:none!important}
+.leaflet-div-icon{background:none!important;border:none!important}
+
+/* ── Map Layer Switcher ── */
+.map-layer-switcher{
+    position:absolute;top:10px;right:10px;z-index:800;
+    display:flex;gap:0;border-radius:6px;overflow:hidden;
+    border:1px solid rgba(48,54,61,.8);box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.layer-btn{
+    padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;
+    background:rgba(13,17,23,.85);color:#9ca3af;border:none;cursor:pointer;
+    transition:background .15s,color .15s;border-right:1px solid rgba(48,54,61,.6);
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+}
+.layer-btn:last-child{border-right:none}
+.layer-btn:hover{color:#e5e7eb;background:rgba(22,27,34,.95)}
+.layer-btn.active{color:#f41216;background:rgba(244,18,22,.12)}
 
 /* ── Map Legend ── */
 .map-legend{
@@ -103,11 +120,9 @@ a{color:#3b82f6;text-decoration:none}
 .error-state{text-align:center;padding:60px 20px;color:#ef4444}
 .error-state h3{margin-bottom:8px}
 
-/* ── Refresh indicator ── */
 .refresh-bar{text-align:center;padding:6px;font-size:11px;color:#4b5563}
 
 /* ── Leaflet custom markers ── */
-.leaflet-div-icon{background:none!important;border:none!important}
 .marker-player{
     background:rgba(59,130,246,.9);border:2px solid #3b82f6;border-radius:50%;
     width:14px!important;height:14px!important;box-shadow:0 0 8px rgba(59,130,246,.5);
@@ -123,6 +138,13 @@ a{color:#3b82f6;text-decoration:none}
     background:rgba(13,17,23,.85);color:#3b82f6;padding:2px 6px;border-radius:4px;
     font-size:11px;font-weight:700;white-space:nowrap;border:1px solid rgba(59,130,246,.3);
 }
+
+/* ── Leaflet popup dark theme ── */
+.leaflet-popup-content-wrapper{background:#161b22;color:#e5e7eb;border:1px solid #30363d;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.leaflet-popup-tip{background:#161b22;border:1px solid #30363d}
+.leaflet-popup-close-button{color:#6b7280!important}
+.leaflet-popup-close-button:hover{color:#f41216!important}
+.popup-coords{font-family:'Consolas','Courier New',monospace;font-size:12px;color:#9ca3af;margin-top:2px}
 </style>
 </head>
 <body>
@@ -136,7 +158,15 @@ a{color:#3b82f6;text-decoration:none}
     <span class="session-badge" id="session-badge">--------</span>
 </div>
 
-<div id="map"></div>
+<div style="position:relative;">
+    <div id="map"></div>
+    <div class="map-layer-switcher" id="layer-switcher">
+        <button class="layer-btn active" data-layer="dark">Dark</button>
+        <button class="layer-btn" data-layer="satellite">Satellite</button>
+        <button class="layer-btn" data-layer="terrain">Terrain</button>
+        <button class="layer-btn" data-layer="street">Street</button>
+    </div>
+</div>
 
 <div class="map-legend">
     <div class="legend-item"><span class="legend-dot player"></span>Players</div>
@@ -155,11 +185,7 @@ a{color:#3b82f6;text-decoration:none}
 (function() {
     'use strict';
 
-    // ═══════════════════════════════════════════
-    // CONFIGURATION — Update this to your Cloud Function URL
-    // ═══════════════════════════════════════════
     var API_BASE = 'https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer';
-    // ═══════════════════════════════════════════
 
     var REFRESH_INTERVAL = 10000;
     var sessionId = new URLSearchParams(window.location.search).get('id');
@@ -167,7 +193,7 @@ a{color:#3b82f6;text-decoration:none}
     var infoContainer = document.getElementById('info-container');
     var refreshBar = document.getElementById('refresh-bar');
     var countdown = 10;
-    var map, playerLayer, fireLayer, propLayer;
+    var map, playerLayer, fireLayer, propLayer, currentTileLayer;
 
     document.getElementById('session-badge').textContent = sessionId || '???';
 
@@ -176,39 +202,55 @@ a{color:#3b82f6;text-decoration:none}
         return;
     }
 
+    // ── Tile Layers ──
+    var tileLayers = {
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }),
+        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+        terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }),
+        street: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 })
+    };
+
     // ── Init Map ──
-    map = L.map('map', {
-        center: [35, -100],
-        zoom: 4,
-        zoomControl: true,
-        attributionControl: false
-    });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
-    }).addTo(map);
+    map = L.map('map', { center: [35, -100], zoom: 4, zoomControl: true, attributionControl: false });
+    currentTileLayer = tileLayers.dark;
+    currentTileLayer.addTo(map);
 
     playerLayer = L.layerGroup().addTo(map);
     fireLayer = L.layerGroup().addTo(map);
     propLayer = L.layerGroup().addTo(map);
 
+    // ── Layer Switcher ──
+    var layerBtns = document.querySelectorAll('.layer-btn');
+    for (var b = 0; b < layerBtns.length; b++) {
+        layerBtns[b].addEventListener('click', function() {
+            var key = this.getAttribute('data-layer');
+            if (tileLayers[key] && tileLayers[key] !== currentTileLayer) {
+                map.removeLayer(currentTileLayer);
+                currentTileLayer = tileLayers[key];
+                currentTileLayer.addTo(map);
+                currentTileLayer.bringToBack();
+                for (var i = 0; i < layerBtns.length; i++) layerBtns[i].classList.remove('active');
+                this.classList.add('active');
+            }
+        });
+    }
+
     function fireIcon() {
         return L.divIcon({
             className: 'marker-fire',
             html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="#f41216"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
+            iconSize: [18, 18], iconAnchor: [9, 9]
         });
     }
-
-    function playerIcon() {
-        return L.divIcon({ className: 'marker-player', iconSize: [14, 14], iconAnchor: [7, 7] });
-    }
-
-    function propIcon() {
-        return L.divIcon({ className: 'marker-prop', iconSize: [12, 12], iconAnchor: [6, 6] });
-    }
-
+    function playerIcon() { return L.divIcon({ className: 'marker-player', iconSize: [14, 14], iconAnchor: [7, 7] }); }
+    function propIcon() { return L.divIcon({ className: 'marker-prop', iconSize: [12, 12], iconAnchor: [6, 6] }); }
     function escHtml(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function fmtCoord(lat, lon) {
+        var latDir = lat >= 0 ? 'N' : 'S';
+        var lonDir = lon >= 0 ? 'E' : 'W';
+        return Math.abs(lat).toFixed(5) + '\u00B0 ' + latDir + ', ' + Math.abs(lon).toFixed(5) + '\u00B0 ' + lonDir;
+    }
 
     function timeSince(ts) {
         var mins = Math.floor((Date.now() - ts) / 60000);
@@ -227,16 +269,15 @@ a{color:#3b82f6;text-decoration:none}
         playerLayer.clearLayers();
         fireLayer.clearLayers();
         propLayer.clearLayers();
-
         var bounds = [];
 
-        // Fires
+        // Fires — coordinates in popup
         for (var i = 0; i < data.fires.length; i++) {
             var f = data.fires[i];
             if (f.lat && f.lon) {
-                var fm = L.marker([f.lat, f.lon], { icon: fireIcon() })
-                    .bindPopup('<b style="color:#f41216">Fire</b><br>Type: ' + escHtml(f.type || 'unknown'));
-                fireLayer.addLayer(fm);
+                L.marker([f.lat, f.lon], { icon: fireIcon() })
+                    .bindPopup('<b style="color:#f41216">Fire</b><div class="popup-coords">' + fmtCoord(f.lat, f.lon) + '</div>')
+                    .addTo(fireLayer);
                 bounds.push([f.lat, f.lon]);
             }
         }
@@ -245,9 +286,9 @@ a{color:#3b82f6;text-decoration:none}
         for (var j = 0; j < data.props.length; j++) {
             var p = data.props[j];
             if (p.lat && p.lon) {
-                var pm = L.marker([p.lat, p.lon], { icon: propIcon() })
-                    .bindPopup('<b style="color:#22c55e">Prop</b><br>' + escHtml(p.propName || p.propType || 'Unknown'));
-                propLayer.addLayer(pm);
+                L.marker([p.lat, p.lon], { icon: propIcon() })
+                    .bindPopup('<b style="color:#22c55e">Prop</b><br>' + escHtml(p.propName || p.propType || 'Unknown') + '<div class="popup-coords">' + fmtCoord(p.lat, p.lon) + '</div>')
+                    .addTo(propLayer);
                 bounds.push([p.lat, p.lon]);
             }
         }
@@ -256,27 +297,17 @@ a{color:#3b82f6;text-decoration:none}
         for (var k = 0; k < data.players.length; k++) {
             var pl = data.players[k];
             if (pl.lat != null && pl.lon != null) {
-                var plm = L.marker([pl.lat, pl.lon], { icon: playerIcon() })
-                    .bindPopup('<b style="color:#3b82f6">' + escHtml(pl.name) + '</b>' + (pl.isHost ? ' (Host)' : ''));
-                playerLayer.addLayer(plm);
-
-                // Name label
-                var label = L.marker([pl.lat, pl.lon], {
-                    icon: L.divIcon({
-                        className: 'player-label',
-                        html: escHtml(pl.name),
-                        iconSize: null,
-                        iconAnchor: [-10, 6]
-                    })
-                });
-                playerLayer.addLayer(label);
+                L.marker([pl.lat, pl.lon], { icon: playerIcon() })
+                    .bindPopup('<b style="color:#3b82f6">' + escHtml(pl.name) + '</b>' + (pl.isHost ? ' (Host)' : '') + '<div class="popup-coords">' + fmtCoord(pl.lat, pl.lon) + '</div>')
+                    .addTo(playerLayer);
+                L.marker([pl.lat, pl.lon], {
+                    icon: L.divIcon({ className: 'player-label', html: escHtml(pl.name), iconSize: null, iconAnchor: [-10, 6] })
+                }).addTo(playerLayer);
                 bounds.push([pl.lat, pl.lon]);
             }
         }
 
-        if (bounds.length > 0) {
-            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
-        }
+        if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
     }
 
     function renderInfo(data) {
@@ -287,19 +318,15 @@ a{color:#3b82f6;text-decoration:none}
                 '<div class="stat-box props"><span class="num">' + data.props.length + '</span><span class="lbl">Props</span></div>' +
             '</div>';
 
-        // Session Info
         html += '<div class="info-card"><h3>Session Info</h3>';
         html += '<div class="info-row"><span class="label">Host</span><span class="value">' + escHtml(data.hostName) + '</span></div>';
         html += '<div class="info-row"><span class="label">Platform</span><span class="value">' + platformLabel(data.platform) + '</span></div>';
         html += '<div class="info-row"><span class="label">Visibility</span><span class="value">' + (data.visibility || 'public').toUpperCase() + '</span></div>';
         html += '<div class="info-row"><span class="label">Created</span><span class="value">' + timeSince(data.createdAt) + '</span></div>';
         html += '<div class="info-row"><span class="label">Live Fires</span><span class="value">' + (data.liveFiresEnabled ? 'Enabled' : 'Disabled') + '</span></div>';
-        if (data.description) {
-            html += '<div style="margin-top:8px"><div class="description-text">"' + escHtml(data.description) + '"</div></div>';
-        }
+        if (data.description) html += '<div style="margin-top:8px"><div class="description-text">"' + escHtml(data.description) + '"</div></div>';
         html += '</div>';
 
-        // Player List
         html += '<div class="info-card"><h3>Players (' + data.players.length + ')</h3>';
         if (data.players.length === 0) {
             html += '<div style="color:#6b7280;font-size:14px;padding:8px 0;">No players connected</div>';
@@ -317,12 +344,11 @@ a{color:#3b82f6;text-decoration:none}
             }
         }
         html += '</div>';
-
         infoContainer.innerHTML = html;
     }
 
     function fetchDetail() {
-        refreshBar.textContent = 'Refreshing…';
+        refreshBar.textContent = 'Refreshing\u2026';
         var url = API_BASE + '/session/details?sessionId=' + encodeURIComponent(sessionId);
         if (adminKey) url += '&adminKey=' + encodeURIComponent(adminKey);
 
@@ -333,16 +359,9 @@ a{color:#3b82f6;text-decoration:none}
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        updateMap(data);
-                        renderInfo(data);
-                        countdown = Math.floor(REFRESH_INTERVAL / 1000);
-                    } else {
-                        infoContainer.innerHTML = '<div class="error-state"><h3>' + (data.error || 'Session not found') + '</h3><p><a href="index.html">Back to sessions</a></p></div>';
-                    }
-                } catch (e) {
-                    infoContainer.innerHTML = '<div class="error-state"><h3>Invalid response</h3></div>';
-                }
+                    if (data.success) { updateMap(data); renderInfo(data); countdown = Math.floor(REFRESH_INTERVAL / 1000); }
+                    else infoContainer.innerHTML = '<div class="error-state"><h3>' + (data.error || 'Session not found') + '</h3><p><a href="index.html">Back to sessions</a></p></div>';
+                } catch (e) { infoContainer.innerHTML = '<div class="error-state"><h3>Invalid response</h3></div>'; }
             } else if (xhr.status === 404) {
                 infoContainer.innerHTML = '<div class="error-state"><h3>Session Not Found</h3><p>This session may have ended.<br/><a href="index.html">Back to sessions</a></p></div>';
             } else if (xhr.status === 403) {
@@ -351,23 +370,12 @@ a{color:#3b82f6;text-decoration:none}
                 infoContainer.innerHTML = '<div class="error-state"><h3>Error ' + xhr.status + '</h3></div>';
             }
         };
-        xhr.onerror = function() {
-            infoContainer.innerHTML = '<div class="error-state"><h3>Network Error</h3><p>Check your connection.</p></div>';
-        };
+        xhr.onerror = function() { infoContainer.innerHTML = '<div class="error-state"><h3>Network Error</h3><p>Check your connection.</p></div>'; };
         xhr.send();
     }
 
     fetchDetail();
-    setInterval(function() {
-        countdown--;
-        if (countdown <= 0) {
-            fetchDetail();
-        } else {
-            refreshBar.textContent = 'Auto-refresh in ' + countdown + 's';
-        }
-    }, 1000);
-
-    // Fix Leaflet map rendering after layout settles
+    setInterval(function() { countdown--; if (countdown <= 0) fetchDetail(); else refreshBar.textContent = 'Auto-refresh in ' + countdown + 's'; }, 1000);
     setTimeout(function() { map.invalidateSize(); }, 300);
 })();
 </script>

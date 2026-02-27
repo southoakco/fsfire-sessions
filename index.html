@@ -49,8 +49,46 @@ a:hover{text-decoration:underline}
 .refresh-text{font-size:11px;color:#6b7280}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
+/* ── Toolbar (Search + Sort) ── */
+.toolbar{
+    max-width:960px;margin:0 auto;padding:12px 12px 0;
+    display:flex;gap:8px;align-items:center;
+}
+.search-box{
+    flex:1;position:relative;
+}
+.search-box svg{
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;color:#6b7280;pointer-events:none;
+}
+.search-input{
+    width:100%;padding:10px 12px 10px 36px;
+    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;
+    color:#e5e7eb;font-size:14px;font-family:inherit;outline:none;
+    transition:border-color .15s;
+}
+.search-input:focus{border-color:rgba(244,18,22,.4)}
+.search-input::placeholder{color:#4b5563}
+
+.sort-select{
+    padding:10px 32px 10px 12px;
+    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;
+    color:#e5e7eb;font-size:13px;font-weight:600;font-family:inherit;
+    outline:none;cursor:pointer;transition:border-color .15s;
+    -webkit-appearance:none;-moz-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;
+}
+.sort-select:focus{border-color:rgba(244,18,22,.4)}
+
+.result-count{
+    font-size:12px;color:#6b7280;padding:4px 12px 0;max-width:960px;margin:0 auto;
+    display:none;
+}
+.result-count.visible{display:block}
+
 /* ── Container ── */
-.container{max-width:960px;margin:0 auto;padding:12px}
+.container{max-width:960px;margin:0 auto;padding:8px 12px 12px}
 
 /* ── Session Cards ── */
 .session-grid{display:grid;grid-template-columns:1fr;gap:10px}
@@ -65,7 +103,7 @@ a:hover{text-decoration:underline}
 .session-card:hover{border-color:rgba(244,18,22,.4);background:rgba(22,27,34,1);transform:translateY(-1px)}
 .session-card:active{transform:translateY(0)}
 
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .session-code{
     font-family:'Consolas','Courier New',monospace;font-size:16px;font-weight:700;
     letter-spacing:2px;color:#f41216;
@@ -76,8 +114,14 @@ a:hover{text-decoration:underline}
     background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);
 }
 
-.host-name{color:#9ca3af;font-size:13px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.host-name{color:#9ca3af;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .host-name strong{color:#e5e7eb}
+
+.card-description{
+    color:#6b7280;font-size:12px;font-style:italic;line-height:1.4;
+    margin-bottom:8px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
 
 .card-stats{display:flex;gap:12px;flex-wrap:wrap}
 .stat{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600}
@@ -139,18 +183,33 @@ a:hover{text-decoration:underline}
 
 <div class="status-bar">
     <div class="status-pill"><span class="dot"></span> LIVE</div>
-    <div class="status-pill count"><strong id="session-count">—</strong>&nbsp;Sessions</div>
-    <div class="refresh-text" id="refresh-text">Refreshing…</div>
+    <div class="status-pill count"><strong id="session-count">&mdash;</strong>&nbsp;Sessions</div>
+    <div class="refresh-text" id="refresh-text">Refreshing&hellip;</div>
 </div>
+
+<div class="toolbar">
+    <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="search-input" placeholder="Search sessions, hosts, descriptions&hellip;" autocomplete="off"/>
+    </div>
+    <select class="sort-select" id="sort-select">
+        <option value="players">Most Players</option>
+        <option value="newest">Newest</option>
+        <option value="fires">Most Fires</option>
+        <option value="platform_2024">MSFS 2024 First</option>
+        <option value="platform_2020">MSFS 2020 First</option>
+    </select>
+</div>
+<div class="result-count" id="result-count"></div>
 
 <div class="container">
     <div id="content">
-        <div class="loading"><div class="spinner"></div>Loading sessions…</div>
+        <div class="loading"><div class="spinner"></div>Loading sessions&hellip;</div>
     </div>
 </div>
 
 <div class="footer">
-    Powered by <a href="https://southoakco.com" target="_blank">FS Fire</a> · Firefighting simulation for MSFS
+    Powered by <a href="https://southoakco.com" target="_blank">FS Fire</a> &middot; Firefighting simulation for MSFS
 </div>
 
 <div class="error-toast" id="error-toast"></div>
@@ -159,19 +218,20 @@ a:hover{text-decoration:underline}
 (function() {
     'use strict';
 
-    // ═══════════════════════════════════════════
-    // CONFIGURATION — Update this to your Cloud Function URL
-    // ═══════════════════════════════════════════
     var API_BASE = 'https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer';
-    // ═══════════════════════════════════════════
 
     var REFRESH_INTERVAL = 15000;
     var content = document.getElementById('content');
     var countEl = document.getElementById('session-count');
     var refreshEl = document.getElementById('refresh-text');
     var errorToast = document.getElementById('error-toast');
-    var refreshTimer = null;
+    var searchInput = document.getElementById('search-input');
+    var sortSelect = document.getElementById('sort-select');
+    var resultCountEl = document.getElementById('result-count');
     var countdown = 15;
+
+    // Raw sessions from API — filtered/sorted on render
+    var allSessions = [];
 
     function showError(msg) {
         errorToast.textContent = msg;
@@ -179,12 +239,10 @@ a:hover{text-decoration:underline}
         setTimeout(function() { errorToast.classList.remove('visible'); }, 4000);
     }
 
-    function timeSince(ts) {
-        var mins = Math.floor((Date.now() - ts) / 60000);
-        if (mins < 1) return 'Just now';
-        if (mins < 60) return mins + 'm ago';
-        var hrs = Math.floor(mins / 60);
-        return hrs + 'h ' + (mins % 60) + 'm ago';
+    function escHtml(str) {
+        var d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
     }
 
     function platformLabel(p) {
@@ -194,10 +252,72 @@ a:hover{text-decoration:underline}
         return p.toUpperCase();
     }
 
-    function renderSessions(sessions) {
-        countEl.textContent = sessions.length;
+    // ── Filter ──
+    function filterSessions(sessions, query) {
+        if (!query) return sessions;
+        var q = query.toLowerCase();
+        return sessions.filter(function(s) {
+            var searchable = [
+                s.sessionId,
+                s.hostName,
+                s.description,
+                s.platform,
+                platformLabel(s.platform)
+            ].join(' ').toLowerCase();
+            return searchable.indexOf(q) !== -1;
+        });
+    }
 
-        if (sessions.length === 0) {
+    // ── Sort ──
+    function sortSessions(sessions, sortKey) {
+        var sorted = sessions.slice();
+        switch (sortKey) {
+            case 'players':
+                sorted.sort(function(a, b) { return b.playerCount - a.playerCount || b.createdAt - a.createdAt; });
+                break;
+            case 'newest':
+                sorted.sort(function(a, b) { return b.createdAt - a.createdAt; });
+                break;
+            case 'fires':
+                sorted.sort(function(a, b) { return b.fireCount - a.fireCount || b.playerCount - a.playerCount; });
+                break;
+            case 'platform_2024':
+                sorted.sort(function(a, b) {
+                    var aIs = a.platform === 'msfs2024' ? 0 : 1;
+                    var bIs = b.platform === 'msfs2024' ? 0 : 1;
+                    return aIs - bIs || b.playerCount - a.playerCount;
+                });
+                break;
+            case 'platform_2020':
+                sorted.sort(function(a, b) {
+                    var aIs = a.platform === 'msfs2020' ? 0 : 1;
+                    var bIs = b.platform === 'msfs2020' ? 0 : 1;
+                    return aIs - bIs || b.playerCount - a.playerCount;
+                });
+                break;
+        }
+        return sorted;
+    }
+
+    // ── Render ──
+    function renderSessions() {
+        var query = searchInput.value.trim();
+        var sortKey = sortSelect.value;
+
+        var filtered = filterSessions(allSessions, query);
+        var sorted = sortSessions(filtered, sortKey);
+
+        countEl.textContent = allSessions.length;
+
+        // Show result count only when searching
+        if (query && allSessions.length > 0) {
+            resultCountEl.textContent = sorted.length + ' of ' + allSessions.length + ' sessions match "' + query + '"';
+            resultCountEl.classList.add('visible');
+        } else {
+            resultCountEl.classList.remove('visible');
+        }
+
+        if (allSessions.length === 0) {
             content.innerHTML =
                 '<div class="empty-state">' +
                     '<svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' +
@@ -207,16 +327,28 @@ a:hover{text-decoration:underline}
             return;
         }
 
+        if (sorted.length === 0) {
+            content.innerHTML =
+                '<div class="empty-state">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="#30363d" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+                    '<h3>No Matching Sessions</h3>' +
+                    '<p>No sessions match your search. Try different keywords.</p>' +
+                '</div>';
+            return;
+        }
+
         var html = '<div class="session-grid">';
-        for (var i = 0; i < sessions.length; i++) {
-            var s = sessions[i];
+        for (var i = 0; i < sorted.length; i++) {
+            var s = sorted[i];
+            var desc = s.description ? '<div class="card-description">' + escHtml(s.description) + '</div>' : '';
             html +=
-                '<div class="session-card" data-id="' + s.sessionId + '" onclick="window.location.href=\'session.html?id=' + s.sessionId + '\'">' +
+                '<div class="session-card" onclick="window.location.href=\'session.html?id=' + s.sessionId + '\'">' +
                     '<div class="card-header">' +
                         '<span class="session-code">' + s.sessionId + '</span>' +
                         '<span class="platform-badge">' + platformLabel(s.platform) + '</span>' +
                     '</div>' +
                     '<div class="host-name">Host: <strong>' + escHtml(s.hostName) + '</strong></div>' +
+                    desc +
                     '<div class="card-stats">' +
                         '<div class="stat players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' + s.playerCount + '</div>' +
                         '<div class="stat fires"><svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' + s.fireCount + '</div>' +
@@ -229,14 +361,13 @@ a:hover{text-decoration:underline}
         content.innerHTML = html;
     }
 
-    function escHtml(str) {
-        var d = document.createElement('div');
-        d.textContent = str || '';
-        return d.innerHTML;
-    }
+    // ── Search & Sort event handlers ──
+    searchInput.addEventListener('input', renderSessions);
+    sortSelect.addEventListener('change', renderSessions);
 
+    // ── Fetch ──
     function fetchSessions() {
-        refreshEl.textContent = 'Refreshing…';
+        refreshEl.textContent = 'Refreshing\u2026';
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', API_BASE + '/sessions/public', true);
@@ -246,7 +377,8 @@ a:hover{text-decoration:underline}
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (data.success) {
-                        renderSessions(data.sessions || []);
+                        allSessions = data.sessions || [];
+                        renderSessions();
                         countdown = Math.floor(REFRESH_INTERVAL / 1000);
                     } else {
                         showError(data.error || 'Failed to load sessions');
@@ -258,7 +390,7 @@ a:hover{text-decoration:underline}
                 showError('Server error: ' + xhr.status);
             }
         };
-        xhr.onerror = function() { showError('Network error — check your connection'); };
+        xhr.onerror = function() { showError('Network error \u2014 check your connection'); };
         xhr.ontimeout = function() { showError('Request timed out'); };
         xhr.send();
     }
