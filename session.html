@@ -299,7 +299,6 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
     function platformLabel(p, pOther) {
         if (p === 'msfs2024') return 'MSFS 2024';
         if (p === 'msfs2020') return 'MSFS 2020';
-        if (p === 'other' || p === 'OTHER') return (pOther && pOther.trim()) ? pOther.trim() : 'Other';
         return p ? p.toUpperCase() : 'MSFS';
     }
 
