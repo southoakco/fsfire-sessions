@@ -463,8 +463,6 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
                 } catch (e) { infoContainer.innerHTML = '<div class="error-state"><h3>Invalid response</h3></div>'; }
             } else if (xhr.status === 404) {
                 infoContainer.innerHTML = '<div class="error-state"><h3>Session Not Found</h3><p>This session may have ended.<br/><a href="index.html">Back to sessions</a></p></div>';
-            } else if (xhr.status === 403) {
-                infoContainer.innerHTML = '<div class="error-state"><h3>Private Session</h3><p>This session is private.<br/><a href="index.html">Back to sessions</a></p></div>';
             } else {
                 infoContainer.innerHTML = '<div class="error-state"><h3>Error ' + xhr.status + '</h3></div>';
             }
