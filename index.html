@@ -167,6 +167,37 @@ a:hover{text-decoration:underline}
     box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 .error-toast.visible{display:block}
+
+/* ── Private Session Finder ── */
+.private-btn{
+    padding:10px 14px;background:rgba(22,27,34,.8);border:1px solid #30363d;
+    border-radius:8px;color:#9ca3af;font-size:13px;font-weight:600;
+    font-family:inherit;cursor:pointer;white-space:nowrap;
+    transition:border-color .15s,color .15s;flex-shrink:0;
+}
+.private-btn:hover{border-color:rgba(244,18,22,.4);color:#f41216}
+.private-btn.active{border-color:rgba(244,18,22,.5);color:#f41216;background:rgba(244,18,22,.06)}
+.private-row{
+    max-width:960px;margin:0 auto;padding:0 12px;
+    display:none;
+}
+.private-row.visible{display:flex;gap:8px;padding-top:8px}
+.private-input{
+    flex:1;padding:10px 12px;font-family:'Consolas','Courier New',monospace;
+    font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+    background:rgba(22,27,34,.8);border:1px solid rgba(244,18,22,.3);border-radius:8px;
+    color:#f41216;outline:none;transition:border-color .15s;max-width:200px;
+}
+.private-input:focus{border-color:rgba(244,18,22,.7)}
+.private-input::placeholder{color:#4b5563;letter-spacing:1px;font-size:13px;text-transform:none}
+.private-go-btn{
+    padding:10px 18px;background:#f41216;border:none;border-radius:8px;
+    color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+    transition:background .15s;white-space:nowrap;
+}
+.private-go-btn:hover{background:#dc0f13}
+.private-go-btn:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+.private-hint{font-size:12px;color:#6b7280;align-self:center;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -196,6 +227,12 @@ a:hover{text-decoration:underline}
         <option value="platform_2024">MSFS 2024 First</option>
         <option value="platform_2020">MSFS 2020 First</option>
     </select>
+    <button class="private-btn" id="private-btn" title="Find a private session by ID">&#128274; Private</button>
+</div>
+<div class="private-row" id="private-row">
+    <input type="text" class="private-input" id="private-input" placeholder="Session ID&hellip;" maxlength="8" autocomplete="off" spellcheck="false"/>
+    <button class="private-go-btn" id="private-go-btn" disabled>Go</button>
+    <span class="private-hint">Enter the 8-character session ID</span>
 </div>
 <div class="result-count" id="result-count"></div>
 
@@ -401,6 +438,42 @@ a:hover{text-decoration:underline}
                 refreshEl.textContent = 'Refresh in ' + countdown + 's';
             }
         }, 1000);
+    }
+
+
+    // ── Private Session Finder ────────────────────────────────────────────
+    var privateBtn   = document.getElementById('private-btn');
+    var privateRow   = document.getElementById('private-row');
+    var privateInput = document.getElementById('private-input');
+    var privateGoBtn = document.getElementById('private-go-btn');
+
+    privateBtn.addEventListener('click', function() {
+        var open = privateRow.classList.toggle('visible');
+        privateBtn.classList.toggle('active', open);
+        if (open) {
+            privateInput.focus();
+        } else {
+            privateInput.value = '';
+            privateGoBtn.disabled = true;
+        }
+    });
+
+    privateInput.addEventListener('input', function() {
+        var val = this.value.trim().toUpperCase();
+        this.value = val;
+        privateGoBtn.disabled = val.length !== 8;
+    });
+
+    privateInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.value.trim().length === 8) goToPrivateSession();
+    });
+
+    privateGoBtn.addEventListener('click', goToPrivateSession);
+
+    function goToPrivateSession() {
+        var id = privateInput.value.trim().toUpperCase();
+        if (id.length !== 8) return;
+        window.location.href = 'session.html?id=' + encodeURIComponent(id);
     }
 
     fetchSessions();

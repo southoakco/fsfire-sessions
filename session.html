@@ -528,14 +528,37 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
 
     chatIdInput.addEventListener('input', function() {
         chatIdInput.classList.remove('error');
-        // Auto-display badge so user can see expected vs entered
         updateSendBtn();
+        // Unlock messages as soon as a valid Chat ID is entered; lock again if cleared
+        if (isValidChatId(sessionId, this.value.trim())) {
+            unlockChat();
+        } else {
+            lockChat();
+        }
     });
 
     function updateSendBtn() {
         var tag    = chatTagInput.value.trim();
         var chatId = chatIdInput.value.trim();
-        chatSendBtn.disabled = !(tag.length > 0 && chatId.length === 6 && sessionId);
+        chatSendBtn.disabled = !(tag.length > 0 && isValidChatId(sessionId, chatId) && sessionId);
+    }
+
+    var chatUnlocked = false;
+
+    function lockChat() {
+        if (!chatUnlocked) return;
+        chatUnlocked = false;
+        if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+        chatMessages = [];
+        chatLastTs   = 0;
+        chatMsgsEl.innerHTML = '<div class="chat-empty" style="padding:50px 0;">&#128274; Enter your Chat ID to view messages.</div>';
+    }
+
+    function unlockChat() {
+        if (chatUnlocked) return;
+        chatUnlocked = true;
+        pollChat();
+        chatPollTimer = setInterval(pollChat, CHAT_POLL_MS);
     }
 
     // ── Auto-resize textarea ──────────────────────────────────────────────
@@ -673,9 +696,9 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
         xhr.send();
     }
 
+    // Start locked — polling only begins once a valid Chat ID is entered
     if (sessionId) {
-        pollChat();
-        chatPollTimer = setInterval(pollChat, CHAT_POLL_MS);
+        chatMsgsEl.innerHTML = '<div class="chat-empty" style="padding:50px 0;">&#128274; Enter your Chat ID to view messages.</div>';
     } else {
         chatMsgsEl.innerHTML = '<div class="chat-empty">No session selected.</div>';
     }
