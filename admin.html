@@ -116,6 +116,8 @@ a:hover{text-decoration:underline}
 .stat.fires svg{fill:#f41216}.stat.fires{color:#f41216}
 .stat.props svg{fill:#22c55e}.stat.props{color:#22c55e}
 
+.card-chat-id{font-size:11px;color:#6b7280;padding:2px 0 6px;font-family:'Consolas','Courier New',monospace}
+.card-chat-id strong{color:#9ca3af;letter-spacing:2px}
 .card-meta{margin-top:8px;font-size:11px;color:#4b5563;display:flex;gap:10px}
 
 .card-arrow{position:absolute;right:14px;bottom:14px;color:#30363d;transition:color .15s}
@@ -297,6 +299,25 @@ a:hover{text-decoration:underline}
         return p ? p.toUpperCase() : 'MSFS';
     }
 
+    // ── Chat ID generator (same algorithm as fsfire.js + session.html) ────
+    var FSF_CHAT_SECRET = 'fsfire_chat_v1_xK9mQ2pL';
+    function djb2Hash(str) {
+        var hash = 5381;
+        for (var i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+            hash = hash >>> 0;
+        }
+        return hash;
+    }
+    function generateChatId(sessionId) {
+        var w = Math.floor(Date.now() / (4 * 3600 * 1000));
+        var raw = FSF_CHAT_SECRET + sessionId + w;
+        var hash = djb2Hash(raw);
+        var code = (hash % 1000000).toString();
+        while (code.length < 6) code = '0' + code;
+        return code;
+    }
+
     function renderSessions(sessions) {
         countEl.textContent = sessions.length;
         if (sessions.length === 0) {
@@ -316,6 +337,7 @@ a:hover{text-decoration:underline}
                         '<span class="vis-badge ' + vis + '">' + vis.toUpperCase() + '</span>' +
                         '<span class="platform-badge">' + platformLabel(s.platform) + '</span>' +
                     '</div>' +
+                    '<div class="card-chat-id">Chat ID: <strong>' + generateChatId(s.sessionId) + '</strong></div>' +
                     '<div class="host-name">Host: <strong>' + escHtml(s.hostName) + '</strong></div>' +
                     '<div class="card-stats">' +
                         '<div class="stat players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' + s.playerCount + '</div>' +
