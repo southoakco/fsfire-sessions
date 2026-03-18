@@ -242,10 +242,11 @@ a:hover{text-decoration:underline}
         return d.innerHTML;
     }
 
-    function platformLabel(p) {
+    function platformLabel(p, pOther) {
         if (!p) return 'MSFS';
         if (p === 'msfs2024') return 'MSFS 2024';
         if (p === 'msfs2020') return 'MSFS 2020';
+        if (p === 'other' || p === 'OTHER') return (pOther && pOther.trim()) ? pOther.trim() : 'Other';
         return p.toUpperCase();
     }
 
@@ -259,7 +260,7 @@ a:hover{text-decoration:underline}
                 s.hostName,
                 s.description,
                 s.platform,
-                platformLabel(s.platform)
+                platformLabel(s.platform, s.platformOther)
             ].join(' ').toLowerCase();
             return searchable.indexOf(q) !== -1;
         });
@@ -342,7 +343,7 @@ a:hover{text-decoration:underline}
                 '<div class="session-card" onclick="window.location.href=\'session.html?id=' + s.sessionId + '\'">' +
                     '<div class="card-header">' +
                         '<span class="session-code">' + s.sessionId + '</span>' +
-                        '<span class="platform-badge">' + platformLabel(s.platform) + '</span>' +
+                        '<span class="platform-badge">' + platformLabel(s.platform, s.platformOther) + '</span>' +
                     '</div>' +
                     '<div class="host-name">Host: <strong>' + escHtml(s.hostName) + '</strong></div>' +
                     desc +
