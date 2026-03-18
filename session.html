@@ -107,6 +107,78 @@ a{color:#3b82f6;text-decoration:none}
 .popup-coords{font-family:'Consolas','Courier New',monospace;font-size:12px;color:#9ca3af;margin-top:2px}
 .popup-airport{font-size:12px;color:#22c55e;margin-top:3px;font-weight:600}
 .popup-heading{font-size:12px;color:#6b7280;margin-top:1px}
+
+/* ── Chat ──────────────────────────────────────────────────────────────── */
+.chat-card{background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.chat-card h3{font-size:13px;font-weight:700;color:#f41216;letter-spacing:1px;text-transform:uppercase;margin-bottom:0;padding:14px 16px 10px;border-bottom:1px solid rgba(244,18,22,.15)}
+.chat-tag-row{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(48,54,61,.4);background:rgba(0,0,0,.15);align-items:center}
+.chat-tag-row label{font-size:12px;color:#9ca3af;font-weight:600;white-space:nowrap}
+.chat-tag-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#e5e7eb;font-size:13px;padding:6px 10px;font-family:inherit;min-width:0}
+.chat-tag-input:focus{outline:none;border-color:rgba(244,18,22,.5)}
+.chat-tag-input.error{border-color:#ef4444}
+.chat-tag-saved{font-size:11px;color:#22c55e;margin-left:4px;display:none}
+.chat-messages{height:240px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+.chat-msg{display:flex;flex-direction:column;gap:2px;max-width:85%}
+.chat-msg.mine{align-self:flex-end;align-items:flex-end}
+.chat-msg.theirs{align-self:flex-start;align-items:flex-start}
+.chat-msg-meta{font-size:10px;font-weight:700;letter-spacing:.3px}
+.chat-msg.mine .chat-msg-meta{color:#f41216}
+.chat-msg.theirs .chat-msg-meta{color:#6b7280}
+.chat-msg-bubble{padding:7px 11px;border-radius:10px;font-size:13px;line-height:1.45;word-break:break-word}
+.chat-msg.mine .chat-msg-bubble{background:rgba(244,18,22,.18);border:1px solid rgba(244,18,22,.25);color:#f1f5f9;border-bottom-right-radius:3px}
+.chat-msg.theirs .chat-msg-bubble{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#d1d5db;border-bottom-left-radius:3px}
+.chat-time{font-size:10px;color:#4b5563;margin-top:1px}
+.chat-empty{color:#4b5563;font-size:13px;text-align:center;padding:40px 0;font-style:italic}
+.chat-send-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(48,54,61,.4);background:rgba(0,0,0,.1)}
+.chat-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e5e7eb;font-size:14px;padding:8px 12px;font-family:inherit;resize:none;min-width:0;line-height:1.4;max-height:80px;overflow-y:auto}
+.chat-input:focus{outline:none;border-color:rgba(244,18,22,.5)}
+.chat-input::placeholder{color:#4b5563}
+.chat-send-btn{background:#f41216;border:none;border-radius:8px;color:#fff;cursor:pointer;padding:8px 14px;font-size:13px;font-weight:700;letter-spacing:.3px;transition:background .15s;white-space:nowrap;align-self:flex-end}
+.chat-send-btn:hover{background:#dc0f13}
+.chat-send-btn:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+.chat-connecting{color:#6b7280;font-size:12px;text-align:center;padding:20px 0}
+
+/* ── Chat ──────────────────────────────────────────────────────────────── */
+.chat-card{background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.chat-card h3{font-size:13px;font-weight:700;color:#f41216;letter-spacing:1px;text-transform:uppercase;padding:14px 16px 10px;border-bottom:1px solid rgba(244,18,22,.15);display:flex;align-items:center;justify-content:space-between;margin:0}
+.chat-id-badge{font-family:'Consolas','Courier New',monospace;font-size:13px;font-weight:700;letter-spacing:3px;color:#f41216;background:rgba(244,18,22,.1);padding:3px 8px;border-radius:5px;border:1px solid rgba(244,18,22,.2)}
+.chat-tag-row{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(48,54,61,.4);background:rgba(0,0,0,.15);align-items:center}
+.chat-tag-row label{font-size:12px;color:#9ca3af;font-weight:600;white-space:nowrap}
+.chat-tag-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#e5e7eb;font-size:13px;padding:6px 10px;font-family:inherit;min-width:0}
+.chat-tag-input:focus{outline:none;border-color:rgba(244,18,22,.5)}
+.chat-tag-input.error{border-color:#ef4444}
+.chat-id-row{display:flex;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(48,54,61,.4);background:rgba(0,0,0,.1);align-items:center;font-size:12px;color:#6b7280}
+.chat-id-row span{color:#9ca3af;font-weight:600}
+.chat-id-row input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#e5e7eb;font-size:13px;padding:5px 10px;font-family:'Consolas','Courier New',monospace;letter-spacing:3px;min-width:0;max-width:120px}
+.chat-id-row input:focus{outline:none;border-color:rgba(244,18,22,.5)}
+.chat-id-row input.error{border-color:#ef4444}
+.chat-id-hint{font-size:11px;color:#4b5563;margin-left:4px}
+.chat-messages{height:240px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
+.chat-msg{display:flex;flex-direction:column;gap:1px;max-width:88%}
+.chat-msg.mine{align-self:flex-end;align-items:flex-end}
+.chat-msg.theirs{align-self:flex-start;align-items:flex-start}
+.chat-msg-meta{font-size:10px;font-weight:700;letter-spacing:.3px}
+.chat-msg.mine .chat-msg-meta{color:#f41216}
+.chat-msg.theirs .chat-msg-meta{color:#6b7280}
+.chat-msg-bubble{padding:7px 11px;border-radius:10px;font-size:13px;line-height:1.45;word-break:break-word}
+.chat-msg.mine .chat-msg-bubble{background:rgba(244,18,22,.18);border:1px solid rgba(244,18,22,.25);color:#f1f5f9;border-bottom-right-radius:3px}
+.chat-msg.theirs .chat-msg-bubble{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:#d1d5db;border-bottom-left-radius:3px}
+.chat-time{font-size:10px;color:#4b5563;margin-top:1px}
+.chat-empty{color:#4b5563;font-size:13px;text-align:center;padding:40px 0;font-style:italic}
+.chat-send-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(48,54,61,.4)}
+.chat-input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#e5e7eb;font-size:14px;padding:8px 12px;font-family:inherit;resize:none;min-width:0;line-height:1.4;max-height:80px;overflow-y:auto}
+.chat-input:focus{outline:none;border-color:rgba(244,18,22,.5)}
+.chat-input::placeholder{color:#4b5563}
+.chat-send-btn{background:#f41216;border:none;border-radius:8px;color:#fff;cursor:pointer;padding:8px 14px;font-size:13px;font-weight:700;transition:background .15s;white-space:nowrap;align-self:flex-end}
+.chat-send-btn:hover{background:#dc0f13}
+.chat-send-btn:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+.chat-err{color:#ef4444;font-size:11px;padding:4px 14px;display:none}
 </style>
 </head>
 <body>
@@ -141,6 +213,47 @@ a{color:#3b82f6;text-decoration:none}
     <div class="loading"><div class="spinner"></div>Loading session&hellip;</div>
 </div>
 
+
+<div class="info-container" id="chat-container" style="padding-top:0">
+    <div class="chat-card" id="chat-card">
+        <h3>Session Chat</h3>
+        <div class="chat-tag-row">
+            <label for="chat-tag-input">GamerTag</label>
+            <input type="text" id="chat-tag-input" class="chat-tag-input" placeholder="Enter your GamerTag&hellip;" maxlength="20" autocomplete="off"/>
+            <span class="chat-tag-saved" id="chat-tag-saved">&#10003; Saved</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-connecting">Connecting to chat&hellip;</div>
+        </div>
+        <div class="chat-send-row">
+            <textarea class="chat-input" id="chat-input" rows="1" placeholder="Type a message&hellip;" maxlength="300"></textarea>
+            <button class="chat-send-btn" id="chat-send-btn" disabled>Send</button>
+        </div>
+    </div>
+</div>
+
+<div class="info-container" style="padding-top:0">
+    <div class="chat-card" id="chat-card">
+        <h3>Session Chat <span class="chat-id-badge" id="chat-id-badge" style="display:none"></span></h3>
+        <div class="chat-tag-row">
+            <label for="chat-tag-input">GamerTag</label>
+            <input type="text" id="chat-tag-input" class="chat-tag-input" placeholder="Your GamerTag&hellip;" maxlength="20" autocomplete="off"/>
+        </div>
+        <div class="chat-id-row">
+            <span>Chat ID</span>
+            <input type="text" id="chat-id-input" maxlength="6" placeholder="000000" autocomplete="off"/>
+            <span class="chat-id-hint">From FS Fire &rarr; MP tab</span>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="chat-empty">Loading chat&hellip;</div>
+        </div>
+        <div class="chat-err" id="chat-err"></div>
+        <div class="chat-send-row">
+            <textarea class="chat-input" id="chat-input" rows="1" placeholder="Type a message&hellip;" maxlength="300"></textarea>
+            <button class="chat-send-btn" id="chat-send-btn" disabled>Send</button>
+        </div>
+    </div>
+</div>
 <div class="refresh-bar" id="refresh-bar">Auto-refresh in 10s</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -407,6 +520,378 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
         };
         xhr.onerror = function() { infoContainer.innerHTML = '<div class="error-state"><h3>Network Error</h3><p>Check your connection.</p></div>'; };
         xhr.send();
+    }
+
+
+    // ── Chat ──────────────────────────────────────────────────────────────
+    var RTDB_BASE = 'https://hotspots-433416-default-rtdb.firebaseio.com';
+    var CHAT_PATH = RTDB_BASE + '/chat/' + sessionId + '/messages';
+    var CHAT_POLL_INTERVAL = 4000;
+    var chatTag = '';
+    var chatLastTs = 0;
+    var chatPollTimer = null;
+    var chatMessages = [];
+
+    var chatTagInput = document.getElementById('chat-tag-input');
+    var chatTagSaved = document.getElementById('chat-tag-saved');
+    var chatInput = document.getElementById('chat-input');
+    var chatSendBtn = document.getElementById('chat-send-btn');
+    var chatMessagesEl = document.getElementById('chat-messages');
+
+    // Restore saved GamerTag from localStorage
+    (function() {
+        try {
+            var saved = localStorage.getItem('fsfire_chat_tag');
+            if (saved) {
+                chatTagInput.value = saved;
+                chatTag = saved;
+                chatSendBtn.disabled = false;
+                chatTagSaved.style.display = 'inline';
+            }
+        } catch(e) {}
+    })();
+
+    chatTagInput.addEventListener('input', function() {
+        var val = this.value.trim();
+        chatTag = val;
+        chatSendBtn.disabled = val.length === 0;
+        chatTagInput.classList.remove('error');
+        if (val.length > 0) {
+            chatTagSaved.style.display = 'none';
+            try { localStorage.setItem('fsfire_chat_tag', val); } catch(e) {}
+        }
+    });
+
+    chatTagInput.addEventListener('blur', function() {
+        var val = this.value.trim();
+        if (val.length > 0) {
+            chatTagSaved.style.display = 'inline';
+        }
+    });
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+    });
+
+    // Send on Enter (Shift+Enter for newline)
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+
+    function sendChatMessage() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+        var tag = chatTagInput.value.trim();
+        if (!tag) {
+            chatTagInput.classList.add('error');
+            chatTagInput.focus();
+            return;
+        }
+        chatTag = tag;
+        chatSendBtn.disabled = true;
+        chatInput.disabled = true;
+
+        var msg = { tag: tag, text: text, ts: Date.now() };
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', CHAT_PATH + '.json', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.timeout = 8000;
+        xhr.onload = function() {
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatInput.focus();
+            // Immediately poll to show the new message
+            pollChat();
+        };
+        xhr.onerror = xhr.ontimeout = function() {
+            chatInput.disabled = false;
+            chatSendBtn.disabled = chatTag.length === 0;
+        };
+        xhr.send(JSON.stringify(msg));
+    }
+
+    function escChat(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+
+    function fmtChatTime(ts) {
+        var d = new Date(ts);
+        var h = d.getHours(), m = d.getMinutes();
+        return ('0'+h).slice(-2) + ':' + ('0'+m).slice(-2);
+    }
+
+    function renderChatMessages() {
+        if (chatMessages.length === 0) {
+            chatMessagesEl.innerHTML = '<div class="chat-empty">No messages yet. Say hello!</div>';
+            return;
+        }
+        var myTag = chatTagInput.value.trim();
+        var html = '';
+        for (var i = 0; i < chatMessages.length; i++) {
+            var m = chatMessages[i];
+            var mine = myTag && m.tag === myTag;
+            html +=
+                '<div class="chat-msg ' + (mine ? 'mine' : 'theirs') + '">' +
+                    '<div class="chat-msg-meta">' + escChat(m.tag) + '</div>' +
+                    '<div class="chat-msg-bubble">' + escChat(m.text) + '</div>' +
+                    '<div class="chat-time">' + fmtChatTime(m.ts) + '</div>' +
+                '</div>';
+        }
+        var wasAtBottom = chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop <= chatMessagesEl.clientHeight + 40;
+        chatMessagesEl.innerHTML = html;
+        if (wasAtBottom) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function pollChat() {
+        // Fetch last 50 messages ordered by ts, only newer than last known
+        var url = CHAT_PATH + '.json?limitToLast=50';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 8000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data === null) {
+                        chatMessages = [];
+                    } else {
+                        var msgs = [];
+                        var keys = Object.keys(data);
+                        for (var i = 0; i < keys.length; i++) {
+                            var m = data[keys[i]];
+                            if (m && m.tag && m.text && m.ts) msgs.push(m);
+                        }
+                        msgs.sort(function(a, b) { return a.ts - b.ts; });
+                        chatMessages = msgs;
+                    }
+                    renderChatMessages();
+                } catch(e) {}
+            }
+        };
+        xhr.send();
+    }
+
+    // Start chat polling if we have a valid session
+    if (sessionId) {
+        pollChat();
+        chatPollTimer = setInterval(pollChat, CHAT_POLL_INTERVAL);
+    }
+
+
+    // ── Chat ──────────────────────────────────────────────────────────────
+    var FSF_CHAT_SECRET = 'fsfire_chat_v1_xK9mQ2pL';
+    var CHAT_POLL_MS    = 4000;
+    var chatLastTs      = 0;
+    var chatPollTimer   = null;
+    var chatMessages    = [];
+
+    var chatTagInput  = document.getElementById('chat-tag-input');
+    var chatIdInput   = document.getElementById('chat-id-input');
+    var chatInput     = document.getElementById('chat-input');
+    var chatSendBtn   = document.getElementById('chat-send-btn');
+    var chatMsgsEl    = document.getElementById('chat-messages');
+    var chatErrEl     = document.getElementById('chat-err');
+    var chatIdBadge   = document.getElementById('chat-id-badge');
+
+    // ── Shared djb2 hash (must match fsfire.js fsfGenerateChatId) ─────────
+    function djb2Hash(str) {
+        var hash = 5381;
+        for (var i = 0; i < str.length; i++) {
+            hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+            hash = hash >>> 0;
+        }
+        return hash;
+    }
+    function expectedChatId(sid, w4h) {
+        var raw  = FSF_CHAT_SECRET + sid + w4h;
+        var hash = djb2Hash(raw);
+        var code = (hash % 1000000).toString();
+        while (code.length < 6) code = '0' + code;
+        return code;
+    }
+    function isValidChatId(sid, chatId) {
+        if (!chatId || chatId.length !== 6) return false;
+        var w = Math.floor(Date.now() / (4 * 3600 * 1000));
+        return expectedChatId(sid, w) === chatId || expectedChatId(sid, w - 1) === chatId;
+    }
+
+    // ── Persist GamerTag ──────────────────────────────────────────────────
+    (function() {
+        try {
+            var saved = localStorage.getItem('fsfire_chat_tag');
+            if (saved) chatTagInput.value = saved;
+        } catch(e) {}
+    })();
+
+    chatTagInput.addEventListener('input', function() {
+        chatTagInput.classList.remove('error');
+        try { localStorage.setItem('fsfire_chat_tag', this.value.trim()); } catch(e) {}
+        updateSendBtn();
+    });
+
+    chatIdInput.addEventListener('input', function() {
+        chatIdInput.classList.remove('error');
+        // Auto-display badge so user can see expected vs entered
+        updateSendBtn();
+    });
+
+    function updateSendBtn() {
+        var tag    = chatTagInput.value.trim();
+        var chatId = chatIdInput.value.trim();
+        chatSendBtn.disabled = !(tag.length > 0 && chatId.length === 6 && sessionId);
+    }
+
+    // ── Auto-resize textarea ──────────────────────────────────────────────
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+    });
+
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!chatSendBtn.disabled) sendChatMessage();
+        }
+    });
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+
+    // ── Send ──────────────────────────────────────────────────────────────
+    function sendChatMessage() {
+        var tag    = chatTagInput.value.trim();
+        var chatId = chatIdInput.value.trim();
+        var text   = chatInput.value.trim();
+        chatErrEl.style.display = 'none';
+
+        if (!tag) { chatTagInput.classList.add('error'); chatTagInput.focus(); return; }
+        if (chatId.length !== 6) { chatIdInput.classList.add('error'); chatIdInput.focus(); return; }
+        if (!text) return;
+
+        // Client-side pre-validation — gives instant feedback before hitting the server
+        if (!isValidChatId(sessionId, chatId)) {
+            chatIdInput.classList.add('error');
+            showChatErr('Invalid Chat ID. Check the MP tab in FS Fire.');
+            return;
+        }
+
+        chatSendBtn.disabled = true;
+        chatInput.disabled   = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', API_BASE + '/chat/send?sessionId=' + encodeURIComponent(sessionId) +
+            '&tag='    + encodeURIComponent(tag) +
+            '&text='   + encodeURIComponent(text) +
+            '&chatId=' + encodeURIComponent(chatId), true);
+        xhr.timeout = 8000;
+        xhr.onload = function() {
+            chatInput.value      = '';
+            chatInput.style.height = 'auto';
+            chatInput.disabled   = false;
+            updateSendBtn();
+            chatInput.focus();
+            if (xhr.status === 200) {
+                pollChat(); // show immediately
+            } else {
+                try {
+                    var d = JSON.parse(xhr.responseText);
+                    showChatErr(d.error || 'Failed to send.');
+                } catch(e) { showChatErr('Failed to send.'); }
+            }
+        };
+        xhr.onerror = xhr.ontimeout = function() {
+            chatInput.disabled = false;
+            updateSendBtn();
+            showChatErr('Network error. Try again.');
+        };
+        xhr.send();
+    }
+
+    function showChatErr(msg) {
+        chatErrEl.textContent  = msg;
+        chatErrEl.style.display = 'block';
+        setTimeout(function() { chatErrEl.style.display = 'none'; }, 5000);
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────
+    function escChat(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+    function fmtChatTime(ts) {
+        var d = new Date(ts);
+        return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    }
+
+    function renderChat() {
+        if (chatMessages.length === 0) {
+            chatMsgsEl.innerHTML = '<div class="chat-empty">No messages yet. Say hello!</div>';
+            return;
+        }
+        var myTag  = chatTagInput.value.trim();
+        var atBottom = chatMsgsEl.scrollHeight - chatMsgsEl.scrollTop <= chatMsgsEl.clientHeight + 60;
+        var html   = '';
+        for (var i = 0; i < chatMessages.length; i++) {
+            var m    = chatMessages[i];
+            var mine = myTag && m.tag === myTag;
+            html +=
+                '<div class="chat-msg ' + (mine ? 'mine' : 'theirs') + '">' +
+                    '<div class="chat-msg-meta">' + escChat(m.tag) + '</div>' +
+                    '<div class="chat-msg-bubble">' + escChat(m.text) + '</div>' +
+                    '<div class="chat-time">' + fmtChatTime(m.ts) + '</div>' +
+                '</div>';
+        }
+        chatMsgsEl.innerHTML = html;
+        if (atBottom) chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+    }
+
+    // ── Poll ──────────────────────────────────────────────────────────────
+    function pollChat() {
+        var url = API_BASE + '/chat/messages?sessionId=' + encodeURIComponent(sessionId);
+        if (chatLastTs > 0) url += '&since=' + chatLastTs;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 8000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+                        // Merge new messages
+                        chatMessages = chatMessages.concat(data.messages);
+                        // Keep last 200
+                        if (chatMessages.length > 200) chatMessages = chatMessages.slice(-200);
+                        // Update since pointer
+                        chatLastTs = chatMessages[chatMessages.length - 1].ts;
+                        renderChat();
+                    } else if (chatLastTs === 0) {
+                        // First poll, no messages yet
+                        renderChat();
+                    }
+                } catch(e) {}
+            } else if (chatLastTs === 0) {
+                renderChat();
+            }
+        };
+        xhr.send();
+    }
+
+    if (sessionId) {
+        pollChat();
+        chatPollTimer = setInterval(pollChat, CHAT_POLL_MS);
+    } else {
+        chatMsgsEl.innerHTML = '<div class="chat-empty">No session selected.</div>';
     }
 
     fetchDetail();
