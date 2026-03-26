@@ -133,6 +133,43 @@ a:hover{text-decoration:underline}
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,.9);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:100;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4)}
 .error-toast.visible{display:block}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid #30363d;padding:0 12px;background:#161b22}
+.tab-btn{padding:10px 20px;font-size:13px;font-weight:600;color:#6b7280;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s;letter-spacing:.3px}
+.tab-btn:hover{color:#e5e7eb}
+.tab-btn.active{color:#f41216;border-bottom-color:#f41216}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── Summary Cards ── */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;padding:12px;max-width:960px;margin:0 auto}
+.summary-card{background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;padding:14px 16px}
+.summary-card .val{font-size:24px;font-weight:800;color:#f41216;font-family:'Consolas','Courier New',monospace;line-height:1.1}
+.summary-card .lbl{font-size:11px;color:#6b7280;margin-top:4px;letter-spacing:.3px;text-transform:uppercase}
+
+/* ── History Filters ── */
+.hist-toolbar{max-width:960px;margin:0 auto;padding:8px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hist-toolbar select,.hist-toolbar input{background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:7px;color:#e5e7eb;font-size:13px;padding:7px 11px;font-family:inherit;outline:none}
+.hist-toolbar select:focus,.hist-toolbar input:focus{border-color:rgba(244,18,22,.4)}
+.hist-lbl{font-size:12px;color:#6b7280;white-space:nowrap}
+
+/* ── History Table ── */
+.hist-wrap{max-width:960px;margin:0 auto;padding:0 12px 24px;overflow-x:auto}
+.hist-table{width:100%;border-collapse:collapse;font-size:13px}
+.hist-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #30363d;white-space:nowrap}
+.hist-table td{padding:9px 10px;border-bottom:1px solid rgba(48,54,61,.4);vertical-align:top}
+.hist-table tr:hover td{background:rgba(255,255,255,.02)}
+.ht-code{font-family:'Consolas','Courier New',monospace;font-size:13px;font-weight:700;color:#f41216;letter-spacing:1px}
+.ht-vis{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:5px}
+.ht-vis.public{background:rgba(34,197,94,.15);color:#22c55e}
+.ht-vis.private{background:rgba(107,114,128,.15);color:#9ca3af}
+.ht-players{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.ht-tag{font-size:11px;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(59,130,246,.2);font-family:'Consolas','Courier New',monospace}
+.ht-tag.host{background:rgba(244,18,22,.1);color:#f87171;border-color:rgba(244,18,22,.2)}
+.ht-dur{font-size:12px;color:#9ca3af}
+.ht-dim{color:#6b7280;font-size:12px}
+.hist-empty{text-align:center;padding:48px 16px;color:#6b7280}
+.platform-badge-sm{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
 </style>
 </head>
 <body>
@@ -171,8 +208,49 @@ a:hover{text-decoration:underline}
         </select>
     </div>
 
-    <div class="container">
-        <div id="content"><div class="loading"><div class="spinner"></div>Loading sessions…</div></div>
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-live-btn" onclick="switchTab('live')">&#x25cf; Live Sessions</button>
+        <button class="tab-btn" id="tab-hist-btn" onclick="switchTab('history')">&#128202; History</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-live">
+        <div class="container">
+            <div id="content"><div class="loading"><div class="spinner"></div>Loading sessions…</div></div>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-hist">
+        <!-- Summary cards -->
+        <div class="summary-grid">
+            <div class="summary-card"><div class="val" id="hs-sessions">—</div><div class="lbl">Total Sessions</div></div>
+            <div class="summary-card"><div class="val" id="hs-players">—</div><div class="lbl">Unique GamerTags</div></div>
+            <div class="summary-card"><div class="val" id="hs-joins">—</div><div class="lbl">Total Player Joins</div></div>
+            <div class="summary-card"><div class="val" id="hs-avgdur">—</div><div class="lbl">Avg Duration (min)</div></div>
+            <div class="summary-card"><div class="val" id="hs-avgply">—</div><div class="lbl">Avg Players / Session</div></div>
+        </div>
+        <!-- Filters -->
+        <div class="hist-toolbar">
+            <span class="hist-lbl">Platform</span>
+            <select id="hist-platform" onchange="applyHistFilter()">
+                <option value="">All Platforms</option>
+                <option value="msfs2024">MSFS 2024</option>
+                <option value="msfs2020">MSFS 2020</option>
+                <option value="other">Other</option>
+            </select>
+            <span class="hist-lbl">From</span>
+            <input type="date" id="hist-from" onchange="applyHistFilter()"/>
+            <span class="hist-lbl" id="hist-count-lbl" style="margin-left:auto;color:#6b7280;font-size:12px;"></span>
+        </div>
+        <!-- Table -->
+        <div class="hist-wrap">
+            <table class="hist-table">
+                <thead><tr>
+                    <th>Session</th><th>Host</th><th>Platform</th>
+                    <th>Closed</th><th>Duration</th><th>Players</th><th>Fires</th>
+                </tr></thead>
+                <tbody id="hist-tbody"><tr><td colspan="7" class="hist-empty">Click History tab after authenticating</td></tr></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -265,6 +343,118 @@ a:hover{text-decoration:underline}
         document.getElementById('app').style.display = 'block';
         initApp();
         fetchSessions();
+    }
+
+    // ── Tab Switching ──────────────────────────────────────────────────────
+    var currentTab = 'live';
+    window.switchTab = function(tab) {
+        currentTab = tab;
+        document.getElementById('tab-live').classList.toggle('active', tab === 'live');
+        document.getElementById('tab-hist').classList.toggle('active', tab === 'history');
+        document.getElementById('tab-live-btn').classList.toggle('active', tab === 'live');
+        document.getElementById('tab-hist-btn').classList.toggle('active', tab === 'history');
+        if (tab === 'history' && adminKey && !histLoaded) fetchHistory();
+    };
+
+    // ── History ────────────────────────────────────────────────────────────
+    var histRecords = [];
+    var histLoaded  = false;
+
+    function fetchHistory() {
+        document.getElementById('hist-tbody').innerHTML =
+            '<tr><td colspan="7" class="hist-empty"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px;"></div>Loading&hellip;</td></tr>';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', API_BASE + '/admin/history?adminKey=' + encodeURIComponent(adminKey) + '&limit=1000', true);
+        xhr.timeout = 15000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        histRecords = data.records || [];
+                        histLoaded  = true;
+                        renderSummary(data.summary || {});
+                        applyHistFilter();
+                    }
+                } catch(e) { showHistError('Invalid response'); }
+            } else if (xhr.status === 403) {
+                showHistError('Unauthorized');
+            } else {
+                showHistError('Server error: ' + xhr.status);
+            }
+        };
+        xhr.onerror = function() { showHistError('Network error'); };
+        xhr.send();
+    }
+
+    function showHistError(msg) {
+        document.getElementById('hist-tbody').innerHTML =
+            '<tr><td colspan="7" class="hist-empty">' + escHtml(msg) + '</td></tr>';
+    }
+
+    function renderSummary(s) {
+        document.getElementById('hs-sessions').textContent = (s.totalSessions  || 0).toLocaleString();
+        document.getElementById('hs-players').textContent  = (s.totalUniquePlayers || 0).toLocaleString();
+        document.getElementById('hs-joins').textContent    = (s.totalPlayerJoins   || 0).toLocaleString();
+        document.getElementById('hs-avgdur').textContent   = s.avgDurationMin        || 0;
+        document.getElementById('hs-avgply').textContent   = s.avgPlayersPerSession  || 0;
+    }
+
+    window.applyHistFilter = function() {
+        var platform = document.getElementById('hist-platform').value;
+        var fromDate = document.getElementById('hist-from').value;
+        var fromTs   = fromDate ? new Date(fromDate).getTime() : 0;
+
+        var filtered = histRecords.filter(function(r) {
+            if (platform && r.platform !== platform) return false;
+            if (fromTs   && r.closedAt < fromTs)     return false;
+            return true;
+        });
+
+        document.getElementById('hist-count-lbl').textContent =
+            filtered.length.toLocaleString() + ' session' + (filtered.length !== 1 ? 's' : '');
+        renderHistTable(filtered);
+    };
+
+    function renderHistTable(records) {
+        if (records.length === 0) {
+            document.getElementById('hist-tbody').innerHTML =
+                '<tr><td colspan="7" class="hist-empty">No sessions match the current filter.</td></tr>';
+            return;
+        }
+        var html = '';
+        for (var i = 0; i < records.length; i++) {
+            var r   = records[i];
+            var vis = r.visibility || 'public';
+            var dt  = r.closedAt ? new Date(r.closedAt).toLocaleString() : '—';
+            var dur = r.durationMin != null ? r.durationMin + ' min' : '—';
+
+            var playerHtml = '';
+            if (r.players && r.players.length > 0) {
+                for (var j = 0; j < r.players.length; j++) {
+                    var p = r.players[j];
+                    playerHtml += '<span class="ht-tag' + (p.isHost ? ' host' : '') + '">' +
+                        escHtml(p.name) + (p.isHost ? ' \u2605' : '') +
+                        (p.durationMin != null ? ' ' + p.durationMin + 'm' : '') + '</span>';
+                }
+            } else {
+                playerHtml = '<span class="ht-dim">\u2014</span>';
+            }
+
+            html +=
+                '<tr>' +
+                '<td><span class="ht-code">' + escHtml(r.sessionId) + '</span>' +
+                    '<span class="ht-vis ' + vis + '">' + vis.toUpperCase() + '</span></td>' +
+                '<td>' + escHtml(r.hostName || '\u2014') +
+                    (r.description ? '<br><span class="ht-dim">' + escHtml(r.description.substring(0, 50)) + '</span>' : '') + '</td>' +
+                '<td><span class="platform-badge-sm">' + escHtml(platformLabel(r.platform)) + '</span></td>' +
+                '<td class="ht-dim" style="white-space:nowrap">' + escHtml(dt) + '</td>' +
+                '<td class="ht-dur">' + escHtml(dur) + '</td>' +
+                '<td><div class="ht-players">' + playerHtml + '</div></td>' +
+                '<td class="ht-dim">' + (r.fireCount || 0) + '</td>' +
+                '</tr>';
+        }
+        document.getElementById('hist-tbody').innerHTML = html;
     }
 
     function initApp() {
