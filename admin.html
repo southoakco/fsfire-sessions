@@ -170,6 +170,26 @@ a:hover{text-decoration:underline}
 .ht-dim{color:#6b7280;font-size:12px}
 .hist-empty{text-align:center;padding:48px 16px;color:#6b7280}
 .platform-badge-sm{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3)}
+
+/* ── GamerTag tab ── */
+.tag-row{cursor:pointer}
+.tag-row:hover td{background:rgba(244,18,22,.04)!important}
+.tag-name{font-family:'Consolas','Courier New',monospace;font-size:13px;font-weight:700;color:#e5e7eb}
+.tag-rank{font-size:12px;font-weight:700;color:#6b7280;font-family:'Consolas','Courier New',monospace}
+.tag-back-btn{background:none;border:1px solid #30363d;border-radius:6px;color:#9ca3af;padding:5px 12px;cursor:pointer;font-size:12px;font-family:inherit;transition:color .15s,border-color .15s}
+.tag-back-btn:hover{color:#e5e7eb;border-color:#6b7280}
+.tag-detail-name{font-size:16px;font-weight:800;color:#f41216;font-family:'Consolas','Courier New',monospace;letter-spacing:1px}
+
+/* ── Chat Logs tab ── */
+.chat-search-btn{background:#f41216;border:none;border-radius:7px;color:#fff;cursor:pointer;font-size:13px;font-weight:700;padding:7px 16px;font-family:inherit;transition:filter .15s;white-space:nowrap}
+.chat-search-btn:hover{filter:brightness(1.1)}
+.chat-clear-btn{background:transparent;border:1px solid #30363d;border-radius:7px;color:#9ca3af;cursor:pointer;font-size:12px;padding:7px 12px;font-family:inherit;transition:color .15s,border-color .15s}
+.chat-clear-btn:hover{color:#e5e7eb;border-color:#6b7280}
+.chat-msg-text{color:#e5e7eb;font-size:13px;line-height:1.5;word-break:break-word}
+.chat-highlight{background:rgba(244,18,22,.25);color:#fff;border-radius:2px;padding:0 2px}
+.chat-tag-cell{font-family:'Consolas','Courier New',monospace;font-size:12px;font-weight:700;color:#60a5fa;white-space:nowrap}
+.chat-tag-cell.is-host{color:#f87171}
+.chat-ts{font-size:11px;color:#6b7280;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -211,6 +231,8 @@ a:hover{text-decoration:underline}
     <div class="tabs">
         <button class="tab-btn active" id="tab-live-btn" onclick="switchTab('live')">&#x25cf; Live Sessions</button>
         <button class="tab-btn" id="tab-hist-btn" onclick="switchTab('history')">&#128202; History</button>
+        <button class="tab-btn" id="tab-tags-btn" onclick="switchTab('tags')">&#128100; GamerTags</button>
+        <button class="tab-btn" id="tab-chat-btn" onclick="switchTab('chat')">&#128172; Chat Logs</button>
     </div>
 
     <div class="tab-panel active" id="tab-live">
@@ -251,8 +273,88 @@ a:hover{text-decoration:underline}
                 <tbody id="hist-tbody"><tr><td colspan="7" class="hist-empty">Click History tab after authenticating</td></tr></tbody>
             </table>
         </div>
-    </div>
-</div>
+    </div><!-- /tab-hist -->
+
+    <!-- ── GamerTags Tab ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-tags">
+        <!-- Search + sort bar -->
+        <div class="hist-toolbar">
+            <span class="hist-lbl">Search</span>
+            <input type="text" id="tag-search" placeholder="GamerTag&hellip;" oninput="applyTagFilter()" autocomplete="off" style="max-width:220px;"/>
+            <span class="hist-lbl" style="margin-left:8px;">Sort by</span>
+            <select id="tag-sort" onchange="applyTagFilter()">
+                <option value="sessions">Sessions</option>
+                <option value="time">Total Time</option>
+                <option value="avg">Avg Session Time</option>
+                <option value="hosted">Sessions Hosted</option>
+                <option value="last">Last Seen</option>
+            </select>
+            <span class="hist-lbl" id="tag-count-lbl" style="margin-left:auto;color:#6b7280;font-size:12px;"></span>
+        </div>
+        <!-- Leaderboard -->
+        <div class="hist-wrap" id="tag-list-wrap">
+            <table class="hist-table">
+                <thead><tr>
+                    <th>#</th><th>GamerTag</th><th>Sessions</th><th>Hosted</th>
+                    <th>Total Time</th><th>Avg Session</th><th>Last Seen</th>
+                </tr></thead>
+                <tbody id="tag-tbody"><tr><td colspan="7" class="hist-empty">Load History tab first</td></tr></tbody>
+            </table>
+        </div>
+        <!-- Player detail (shown on row click) -->
+        <div id="tag-detail" style="display:none;">
+            <div class="hist-toolbar" style="padding-top:4px;align-items:center;">
+                <button id="tag-back-btn" onclick="closeTagDetail()" class="tag-back-btn">&#8592; All GamerTags</button>
+                <span id="tag-detail-name" class="tag-detail-name"></span>
+            </div>
+            <div class="summary-grid" id="tag-detail-stats"></div>
+            <div class="hist-wrap">
+                <table class="hist-table">
+                    <thead><tr>
+                        <th>Session</th><th>Role</th><th>Platform</th>
+                        <th>Date</th><th>Duration</th><th>Fires in Session</th>
+                    </tr></thead>
+                    <tbody id="tag-detail-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div><!-- /tab-tags -->
+
+    <!-- ── Chat Logs Tab ─────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-chat">
+        <!-- Search bar -->
+        <div class="hist-toolbar">
+            <span class="hist-lbl">Message</span>
+            <input type="text" id="chat-search-q" placeholder="Search text&hellip;" autocomplete="off" style="flex:1;max-width:280px;"/>
+            <span class="hist-lbl">GamerTag</span>
+            <input type="text" id="chat-search-tag" placeholder="Exact tag&hellip;" autocomplete="off" style="max-width:160px;"/>
+            <span class="hist-lbl">Session</span>
+            <input type="text" id="chat-search-sid" placeholder="Session ID&hellip;" maxlength="8" autocomplete="off" style="max-width:120px;font-family:'Consolas','Courier New',monospace;text-transform:uppercase;letter-spacing:1px;"/>
+            <button onclick="runChatSearch()" class="chat-search-btn">Search</button>
+            <button onclick="clearChatSearch()" class="chat-clear-btn">Clear</button>
+        </div>
+        <!-- Results info -->
+        <div class="hist-toolbar" style="padding-top:0;padding-bottom:4px;">
+            <span id="chat-result-lbl" style="font-size:12px;color:#6b7280;"></span>
+        </div>
+        <!-- Results table -->
+        <div class="hist-wrap">
+            <table class="hist-table">
+                <thead><tr>
+                    <th>Time</th>
+                    <th>GamerTag</th>
+                    <th>Message</th>
+                    <th>Session</th>
+                    <th>Host</th>
+                </tr></thead>
+                <tbody id="chat-tbody">
+                    <tr><td colspan="5" class="hist-empty">Enter a search above and click Search</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div><!-- /tab-chat -->
+
+</div><!-- /auth-content -->
 
 <div class="error-toast" id="error-toast"></div>
 
@@ -351,16 +453,133 @@ a:hover{text-decoration:underline}
         currentTab = tab;
         document.getElementById('tab-live').classList.toggle('active', tab === 'live');
         document.getElementById('tab-hist').classList.toggle('active', tab === 'history');
+        document.getElementById('tab-tags').classList.toggle('active', tab === 'tags');
+        document.getElementById('tab-chat').classList.toggle('active', tab === 'chat');
         document.getElementById('tab-live-btn').classList.toggle('active', tab === 'live');
         document.getElementById('tab-hist-btn').classList.toggle('active', tab === 'history');
+        document.getElementById('tab-tags-btn').classList.toggle('active', tab === 'tags');
+        document.getElementById('tab-chat-btn').classList.toggle('active', tab === 'chat');
         if (tab === 'history' && adminKey && !histLoaded) fetchHistory();
+        if (tab === 'tags' && histLoaded) applyTagFilter();
+        if (tab === 'tags' && adminKey && !histLoaded) {
+            fetchHistory(function() { applyTagFilter(); });
+        }
     };
+
+    // ── Chat Logs Search ──────────────────────────────────────────────────
+    window.runChatSearch = function() {
+        var q   = (document.getElementById('chat-search-q').value   || '').trim();
+        var tag = (document.getElementById('chat-search-tag').value  || '').trim();
+        var sid = (document.getElementById('chat-search-sid').value  || '').trim().toUpperCase();
+
+        if (!q && !tag && !sid) {
+            document.getElementById('chat-result-lbl').textContent = 'Enter at least one search term.';
+            return;
+        }
+
+        var tbody = document.getElementById('chat-tbody');
+        var lbl   = document.getElementById('chat-result-lbl');
+        tbody.innerHTML = '<tr><td colspan="5" class="hist-empty"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px;"></div>Searching&hellip;</td></tr>';
+        lbl.textContent = '';
+
+        var url = API_BASE + '/admin/chat?adminKey=' + encodeURIComponent(adminKey) + '&limit=500';
+        if (q)   url += '&q='         + encodeURIComponent(q);
+        if (tag) url += '&tag='       + encodeURIComponent(tag);
+        if (sid) url += '&sessionId=' + encodeURIComponent(sid);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.timeout = 15000;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.success) renderChatResults(data, q, tag);
+                    else tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">' + escHtml(data.error || 'Error') + '</td></tr>';
+                } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">Invalid response</td></tr>'; }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">Server error: ' + xhr.status + '</td></tr>';
+            }
+        };
+        xhr.onerror = function() { tbody.innerHTML = '<tr><td colspan="5" class="hist-empty">Network error</td></tr>'; };
+        xhr.send();
+    };
+
+    window.clearChatSearch = function() {
+        document.getElementById('chat-search-q').value   = '';
+        document.getElementById('chat-search-tag').value = '';
+        document.getElementById('chat-search-sid').value = '';
+        document.getElementById('chat-result-lbl').textContent = '';
+        document.getElementById('chat-tbody').innerHTML =
+            '<tr><td colspan="5" class="hist-empty">Enter a search above and click Search</td></tr>';
+    };
+
+    function renderChatResults(data, q, tag) {
+        var lbl  = document.getElementById('chat-result-lbl');
+        var msgs = data.messages || [];
+
+        if (msgs.length === 0) {
+            lbl.textContent = 'No messages found.';
+            document.getElementById('chat-tbody').innerHTML =
+                '<tr><td colspan="5" class="hist-empty">No messages match your search.</td></tr>';
+            return;
+        }
+
+        lbl.textContent = msgs.length.toLocaleString() + ' message' + (msgs.length !== 1 ? 's' : '') +
+            (msgs.length >= 500 ? ' (first 500 shown — narrow your search for more)' : '') +
+            '  ·  ' + (data.sessionsWithChat || 0) + ' sessions have chat history';
+
+        var qLower = q ? q.toLowerCase() : null;
+
+        var html = '';
+        for (var i = 0; i < msgs.length; i++) {
+            var m  = msgs[i];
+            var dt = m.ts ? new Date(m.ts).toLocaleString() : '—';
+
+            // Highlight matching text
+            var msgText = escHtml(m.text || '');
+            if (qLower && m.text) {
+                var idx = m.text.toLowerCase().indexOf(qLower);
+                if (idx !== -1) {
+                    msgText = escHtml(m.text.substring(0, idx)) +
+                              '<mark class="chat-highlight">' + escHtml(m.text.substring(idx, idx + q.length)) + '</mark>' +
+                              escHtml(m.text.substring(idx + q.length));
+                }
+            }
+
+            // Highlight matching tag
+            var tagHtml = escHtml(m.tag || '—');
+            if (tag && m.tag && m.tag.toLowerCase() === tag.toLowerCase()) {
+                tagHtml = '<mark class="chat-highlight">' + tagHtml + '</mark>';
+            }
+
+            html +=
+                '<tr>' +
+                '<td class="chat-ts">' + escHtml(dt) + '</td>' +
+                '<td class="chat-tag-cell">' + tagHtml + '</td>' +
+                '<td class="chat-msg-text">' + msgText + '</td>' +
+                '<td><span class="ht-code" style="font-size:11px;">' + escHtml(m.sessionId || '—') + '</span>' +
+                    '<br><span class="ht-dim" style="font-size:10px;">' + escHtml(m.hostName || '') + '</span></td>' +
+                '<td><span class="platform-badge-sm">' + escHtml(platformLabel(m.platform)) + '</span></td>' +
+                '</tr>';
+        }
+        document.getElementById('chat-tbody').innerHTML = html;
+    }
+
+    // Enter key in any chat search field triggers search
+    (function() {
+        ['chat-search-q','chat-search-tag','chat-search-sid'].forEach(function(id) {
+            document.getElementById(id).addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') window.runChatSearch();
+            });
+        });
+    })();
 
     // ── History ────────────────────────────────────────────────────────────
     var histRecords = [];
     var histLoaded  = false;
 
-    function fetchHistory() {
+    function fetchHistory(onDone) {
         document.getElementById('hist-tbody').innerHTML =
             '<tr><td colspan="7" class="hist-empty"><div class="spinner" style="width:20px;height:20px;margin:0 auto 8px;"></div>Loading&hellip;</td></tr>';
         var xhr = new XMLHttpRequest();
@@ -375,6 +594,7 @@ a:hover{text-decoration:underline}
                         histLoaded  = true;
                         renderSummary(data.summary || {});
                         applyHistFilter();
+                        if (typeof onDone === 'function') onDone();
                     }
                 } catch(e) { showHistError('Invalid response'); }
             } else if (xhr.status === 403) {
@@ -385,6 +605,168 @@ a:hover{text-decoration:underline}
         };
         xhr.onerror = function() { showHistError('Network error'); };
         xhr.send();
+    }
+
+    // ── GamerTag Breakdown ────────────────────────────────────────────────
+    // Computed client-side from histRecords — zero extra server cost.
+
+    function buildTagMap(records) {
+        // Returns a map: name -> { name, sessions, hostedSessions, totalMin, sessions[] }
+        var map = {};
+        for (var i = 0; i < records.length; i++) {
+            var r = records[i];
+            var players = r.players || [];
+            for (var j = 0; j < players.length; j++) {
+                var p = players[j];
+                if (!p.name || p.name === 'Unknown') continue;
+                if (!map[p.name]) {
+                    map[p.name] = {
+                        name:           p.name,
+                        sessions:       0,
+                        hostedSessions: 0,
+                        totalMin:       0,
+                        lastSeen:       0,
+                        sessionList:    []   // references to parent session records
+                    };
+                }
+                var entry = map[p.name];
+                entry.sessions++;
+                if (p.isHost) entry.hostedSessions++;
+                entry.totalMin += (p.durationMin || 0);
+                if ((r.closedAt || 0) > entry.lastSeen) entry.lastSeen = r.closedAt || 0;
+                entry.sessionList.push({ record: r, player: p });
+            }
+        }
+        return map;
+    }
+
+    var tagMap = {};
+
+    window.applyTagFilter = function() {
+        // Rebuild tag map from current histRecords each time (fast, in-memory)
+        tagMap = buildTagMap(histRecords);
+        var tags = Object.values(tagMap);
+
+        var search = (document.getElementById('tag-search').value || '').trim().toLowerCase();
+        if (search) {
+            tags = tags.filter(function(t) { return t.name.toLowerCase().indexOf(search) !== -1; });
+        }
+
+        var sort = document.getElementById('tag-sort').value;
+        tags.sort(function(a, b) {
+            if (sort === 'sessions') return b.sessions - a.sessions || b.totalMin - a.totalMin;
+            if (sort === 'time')     return b.totalMin - a.totalMin;
+            if (sort === 'avg') {
+                var aAvg = a.sessions ? a.totalMin / a.sessions : 0;
+                var bAvg = b.sessions ? b.totalMin / b.sessions : 0;
+                return bAvg - aAvg;
+            }
+            if (sort === 'hosted') return b.hostedSessions - a.hostedSessions || b.sessions - a.sessions;
+            if (sort === 'last')   return b.lastSeen - a.lastSeen;
+            return 0;
+        });
+
+        document.getElementById('tag-count-lbl').textContent =
+            tags.length.toLocaleString() + ' GamerTag' + (tags.length !== 1 ? 's' : '');
+
+        renderTagTable(tags);
+    };
+
+    function renderTagTable(tags) {
+        // Hide detail panel, show list
+        document.getElementById('tag-detail').style.display = 'none';
+        document.getElementById('tag-list-wrap').style.display = 'block';
+
+        if (tags.length === 0) {
+            document.getElementById('tag-tbody').innerHTML =
+                '<tr><td colspan="7" class="hist-empty">' +
+                (histLoaded ? 'No GamerTags match your search.' : 'Load the History tab first.') +
+                '</td></tr>';
+            return;
+        }
+
+        var html = '';
+        for (var i = 0; i < tags.length; i++) {
+            var t   = tags[i];
+            var avg = t.sessions ? Math.round(t.totalMin / t.sessions) : 0;
+            var lastDt = t.lastSeen ? new Date(t.lastSeen).toLocaleDateString() : '—';
+            html +=
+                '<tr class="tag-row" onclick="openTagDetail(' + JSON.stringify(t.name) + ')">' +
+                '<td class="tag-rank">' + (i + 1) + '</td>' +
+                '<td class="tag-name">' + escHtml(t.name) + '</td>' +
+                '<td class="ht-dim">' + t.sessions + '</td>' +
+                '<td class="ht-dim">' + t.hostedSessions + '</td>' +
+                '<td class="ht-dim">' + fmtMin(t.totalMin) + '</td>' +
+                '<td class="ht-dim">' + avg + ' min</td>' +
+                '<td class="ht-dim">' + escHtml(lastDt) + '</td>' +
+                '</tr>';
+        }
+        document.getElementById('tag-tbody').innerHTML = html;
+    }
+
+    function fmtMin(mins) {
+        if (mins < 60) return mins + ' min';
+        var h = Math.floor(mins / 60);
+        var m = mins % 60;
+        return h + 'h ' + (m > 0 ? m + 'm' : '');
+    }
+
+    window.openTagDetail = function(name) {
+        var entry = tagMap[name];
+        if (!entry) return;
+
+        document.getElementById('tag-list-wrap').style.display = 'none';
+        document.getElementById('tag-detail').style.display = 'block';
+        document.getElementById('tag-detail-name').textContent = name;
+
+        // Mini stat cards
+        var avg       = entry.sessions ? Math.round(entry.totalMin / entry.sessions) : 0;
+        var lastDt    = entry.lastSeen ? new Date(entry.lastSeen).toLocaleString() : '—';
+        var firstSeen = entry.sessionList.length ?
+            new Date(Math.min.apply(null, entry.sessionList.map(function(x) { return x.record.closedAt || 0; }))).toLocaleDateString() : '—';
+        document.getElementById('tag-detail-stats').innerHTML =
+            card('Sessions', entry.sessions) +
+            card('Hosted', entry.hostedSessions) +
+            card('Total Time', fmtMin(entry.totalMin)) +
+            card('Avg Session', avg + ' min') +
+            card('First Seen', firstSeen) +
+            card('Last Seen', entry.lastSeen ? new Date(entry.lastSeen).toLocaleDateString() : '—');
+
+        // Session list (newest first)
+        var rows = entry.sessionList.slice().sort(function(a, b) {
+            return (b.record.closedAt || 0) - (a.record.closedAt || 0);
+        });
+
+        var html = '';
+        for (var i = 0; i < rows.length; i++) {
+            var x   = rows[i];
+            var r   = x.record;
+            var p   = x.player;
+            var vis = r.visibility || 'public';
+            var dt  = r.closedAt ? new Date(r.closedAt).toLocaleString() : '—';
+            var dur = p.durationMin != null ? p.durationMin + ' min' : '—';
+            html +=
+                '<tr>' +
+                '<td><span class="ht-code">' + escHtml(r.sessionId) + '</span>' +
+                    '<span class="ht-vis ' + vis + '">' + vis.toUpperCase() + '</span></td>' +
+                '<td>' + (p.isHost ? '<span class="ht-tag host">Host &#9733;</span>' : '<span class="ht-tag">Guest</span>') + '</td>' +
+                '<td><span class="platform-badge-sm">' + escHtml(platformLabel(r.platform)) + '</span></td>' +
+                '<td class="ht-dim" style="white-space:nowrap">' + escHtml(dt) + '</td>' +
+                '<td class="ht-dur">' + escHtml(dur) + '</td>' +
+                '<td class="ht-dim">' + (r.fireCount || 0) + '</td>' +
+                '</tr>';
+        }
+        document.getElementById('tag-detail-tbody').innerHTML = html || '<tr><td colspan="6" class="hist-empty">No session data</td></tr>';
+    };
+
+    window.closeTagDetail = function() {
+        document.getElementById('tag-detail').style.display = 'none';
+        document.getElementById('tag-list-wrap').style.display = 'block';
+    };
+
+    function card(lbl, val) {
+        return '<div class="summary-card"><div class="val" style="font-size:18px;">' +
+            escHtml(String(val)) + '</div><div class="lbl">' + escHtml(lbl) + '</div></div>';
     }
 
     function showHistError(msg) {
