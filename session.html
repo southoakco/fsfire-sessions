@@ -423,6 +423,7 @@ var AIRPORT_RAW="AYGA,-6.082,145.392;AYMD,-5.207,145.789;AYMH,-5.826,144.296;AYN
         html += '<div class="info-row"><span class="label">Visibility</span><span class="value">' + (data.visibility || 'public').toUpperCase() + '</span></div>';
         html += '<div class="info-row"><span class="label">Created</span><span class="value">' + timeSince(data.createdAt) + '</span></div>';
         html += '<div class="info-row"><span class="label">Live Fires</span><span class="value">' + (data.liveFiresEnabled ? 'Enabled' : 'Disabled') + '</span></div>';
+        if (data.permanent) html += '<div class="info-row"><span class="label">Server Type</span><span class="value" style="color:#34d399;font-weight:700;">&#9679; PERMANENT</span></div>';
         if (data.description) html += '<div style="margin-top:8px"><div class="description-text">"' + escHtml(data.description) + '"</div></div>';
         html += '</div>';
         html += '<div class="info-card"><h3>Players (' + data.players.length + ')</h3>';
