@@ -457,6 +457,42 @@ body::before {
 
 /* Session Grid */
 .sessions-body { max-width: var(--max-w); margin: 0 auto; padding: 12px 24px 48px; }
+
+/* Collapsible sessions */
+.sessions-collapse-wrap {
+    position: relative;
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1);
+    max-height: 200px; /* collapsed: show ~1 card row */
+}
+.sessions-collapse-wrap.expanded {
+    max-height: 4000px;
+}
+.sessions-fade {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+.sessions-collapse-wrap.expanded .sessions-fade { opacity: 0; }
+.sessions-expand-btn {
+    display: block;
+    margin: 8px auto 0;
+    background: none;
+    border: 1px solid #374151;
+    color: #9ca3af;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 7px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    transition: border-color 0.2s, color 0.2s;
+}
+.sessions-expand-btn:hover { border-color: var(--red); color: #f9fafb; }
 .session-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
 @media (min-width: 560px) { .session-grid { grid-template-columns: repeat(2,1fr); } }
 @media (min-width: 840px) { .session-grid { grid-template-columns: repeat(3,1fr); } }
@@ -642,51 +678,63 @@ footer {
 <section class="section" id="features">
     <div class="section-tag">// Core Features</div>
     <h2 class="section-title">EVERYTHING YOU NEED<br/>TO FIGHT FIRE</h2>
-    <p class="section-desc">FS Fire brings the intensity of aerial firefighting into MSFS with realistic simulation and live data.</p>
+    <p class="section-desc">FS Fire brings the intensity of aerial firefighting into MSFS with realistic simulation, live satellite data, and deep multiplayer support.</p>
 
     <div class="features-grid">
         <div class="feature-card wide">
             <div class="feature-icon">🔥</div>
             <div>
                 <h3>Live Wildfire Hotspots</h3>
-                <p>FS Fire pulls real-time fire data from the VIIRS NOAA-20 satellite constellation, updated every 30 minutes. Fires are placed in-simulator based on their actual size and FRP intensity — so you're flying toward real active wildfires anywhere on the planet.</p>
+                <p>FS Fire pulls real active wildfire data from the VIIRS NOAA-20 NRT satellite at 375m resolution, refreshed every 30 minutes by a cloud backend. Each hotspot's fire radiative power (FRP) is mapped directly to a sim object size — so a major California blaze spawns differently than a small brush fire. Fires that move out of range are held in memory and respawn automatically when you return.</p>
             </div>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">🛩️</div>
-            <h3>Aerial Firefighting</h3>
-            <p>Fly low and drop water, fire retardant, or foam to suppress dynamic wildfire simobjects. Physics-based drop zones account for altitude, airspeed, and heading.</p>
+            <h3>Physics-Based Drop System</h3>
+            <p>Drop calculations factor your altitude AGL, ground speed, and heading to place retardant or water exactly where physics says it should land. Elliptical splash zones grow with altitude and airspeed, forward travel is modeled, and hits are computed against a 125 ft fire radius within a 650 ft ceiling. Works with any aircraft via the FS Fire VFX engine, or natively on the 747 Super Tanker, CL-415, and AT802 in MSFS 2024.</p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">🌐</div>
-            <h3>Multiplayer</h3>
-            <p>Coordinate firefighting operations with friends on VATSIM, IVAO, or native MSFS multiplayer. VFX drops sync across all connected clients in real time.</p>
+            <h3>Full Multiplayer Support</h3>
+            <p>Host a session and fly with a crew across VATSIM, IVAO, or native MSFS multiplayer. Fire state, prop objects, VFX drops, and retardant hits all sync in real time. Guests receive live fire updates within a 200 nm radius of the host, and drop VFX trigger correctly on any MP aircraft within 1 nm — even aircraft you can't directly observe.</p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">🪣</div>
-            <h3>Bucket Drops</h3>
-            <p>Use a suspended water bucket under a helicopter — including pendulum physics and automatic water scooping from rivers and lakes at low altitude.</p>
+            <h3>Helicopter Bucket</h3>
+            <p>Spawn a suspended water bucket positioned 2 ft below and 2 ft forward of your helicopter — it hangs at a fixed offset regardless of pitch or bank, just like the real thing. The bucket auto-fills when you descend below 25 ft AGL at under 10 knots. Tank modes: unlimited, land-refill, or water-scoop.</p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">🎯</div>
             <h3>Mission System</h3>
-            <p>Over 250 handcrafted fire scenarios at real-world POIs. Missions vary in fire type, scale, time of day, and spawn location — no two missions feel the same.</p>
+            <p>325+ handcrafted missions at real-world POIs globally — wildfires, vehicle incidents, boat emergencies, and structure fires. Each mission logs your drop efficiency (minimum drops ÷ actual drops × 100%) and awards Gold, Silver, or Bronze medals. Daily Challenges double your points, Weekly Goals track ongoing progress, and a persistent logbook stores your best result per mission.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <h3>Live Moving Map</h3>
+            <p>An OpenLayers map follows your aircraft in real time using a 30 fps physics interpolation loop. Toggle track-up or north-up, use the declutter control to filter between all markers, fires only, or none. Click any fire marker for a popup with size and AGL data, click the map to get coordinates for a precision GPS drop, and place or drag simobject props directly on the map.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <h3>Simobject Scene Builder</h3>
+            <p>Browse the full MSFS simobject catalog — 331 objects in MSFS 2020, 1,213 in MSFS 2024 — spanning aircraft, ground vehicles, boats, animals, humans, and landmarks. Spawn any object by map-click or coordinate, rotate its heading, and drag it to reposition. Save and load entire scenes including fire layouts, with optional prop-only or fires-only saves.</p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">💬</div>
-            <h3>In-Game Chat</h3>
-            <p>Coordinate with your crew using the built-in session chat panel. Messages sync across all players in the same multiplayer session.</p>
+            <h3>Session Chat &amp; Coordination</h3>
+            <p>Built-in session chat syncs messages across all connected players via HMAC-authenticated cloud relay. Share your session with an 8-digit code or a QR code linking to the live session browser. Host can transfer control mid-session, and the admin panel tracks GamerTag history and session analytics.</p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">🌍</div>
             <h3>Six Languages</h3>
-            <p>Full localization in English, Italian, German, French, Spanish, and Portuguese — so your whole crew can fly in their native language.</p>
+            <p>Full UI localization in English, Italian, German, French, Spanish, and Portuguese across every panel, button, and tooltip. The in-game Info tab includes illustrated instructions with screenshots for the 747 Super Tanker, CL-415 water drop controls, AT802 drop lever, mission briefings, and the logbook.</p>
         </div>
     </div>
 </section>
@@ -703,7 +751,7 @@ footer {
             <div class="stat-label">Hotspot Update Interval</div>
         </div>
         <div class="stat-item">
-            <div class="stat-num">250+</div>
+            <div class="stat-num">325+</div>
             <div class="stat-label">Handcrafted Missions</div>
         </div>
         <div class="stat-item">
@@ -711,11 +759,44 @@ footer {
             <div class="stat-label">Languages Supported</div>
         </div>
         <div class="stat-item">
+            <div class="stat-num">1,213</div>
+            <div class="stat-label">MSFS 2024 Simobjects</div>
+        </div>
+        <div class="stat-item">
             <div class="stat-num">2</div>
             <div class="stat-label">MSFS Versions</div>
         </div>
     </div>
 </div>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="section" id="how-it-works">
+    <div class="section-tag">// Getting Started</div>
+    <h2 class="section-title">READY IN MINUTES</h2>
+    <p class="section-desc">Get from installation to fighting your first wildfire in just a few steps.</p>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">01</div>
+            <h3>Download from Marketplace</h3>
+            <p>Find FS Fire on the Microsoft Flight Simulator in-game Marketplace and install it directly.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">02</div>
+            <h3>Open the Panel</h3>
+            <p>In any flight, open the FS Fire panel from the toolbar. Live hotspots load automatically from satellite data.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">03</div>
+            <h3>Pick a Fire or Mission</h3>
+            <p>Select a live wildfire or choose from 325+ missions. The fire spawns near your current location.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">04</div>
+            <h3>Fly &amp; Fight</h3>
+            <p>Fly your tanker, helicopter, or scooper to the fire and start dropping. Invite friends to join your session.</p>
+        </div>
+    </div>
+</section>
 
 <!-- ══ LIVE SESSIONS ══ -->
 <section id="sessions-section">
@@ -756,42 +837,17 @@ footer {
 
     <div id="result-count" class="result-count"></div>
 
-    <div class="sessions-body">
-        <div id="sessions-content">
-            <div class="loading"><div class="spinner"></div>Loading sessions…</div>
+    <div class="sessions-collapse-wrap" id="sessions-collapse-wrap">
+        <div class="sessions-body">
+            <div id="sessions-content">
+                <div class="loading"><div class="spinner"></div>Loading sessions…</div>
+            </div>
         </div>
+        <div class="sessions-fade" id="sessions-fade"></div>
     </div>
+    <button class="sessions-expand-btn" id="sessions-expand-btn">▼ Show All Sessions</button>
 
     <div class="sessions-footer-bar" id="sessions-footer-bar">&nbsp;</div>
-</section>
-
-<!-- ══ HOW IT WORKS ══ -->
-<section class="section" id="how-it-works">
-    <div class="section-tag">// Getting Started</div>
-    <h2 class="section-title">READY IN MINUTES</h2>
-    <p class="section-desc">Get from installation to fighting your first wildfire in just a few steps.</p>
-    <div class="steps">
-        <div class="step">
-            <div class="step-num">01</div>
-            <h3>Download from Marketplace</h3>
-            <p>Find FS Fire on the Microsoft Flight Simulator in-game Marketplace and install it directly.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">02</div>
-            <h3>Open the Panel</h3>
-            <p>In any flight, open the FS Fire panel from the toolbar. Live hotspots load automatically from satellite data.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">03</div>
-            <h3>Pick a Fire or Mission</h3>
-            <p>Select a live wildfire or choose from 250+ missions. The fire spawns near your current location.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">04</div>
-            <h3>Fly &amp; Fight</h3>
-            <p>Fly your tanker, helicopter, or scooper to the fire and start dropping. Invite friends to join your session.</p>
-        </div>
-    </div>
 </section>
 
 <!-- ══ FOOTER ══ -->
@@ -803,9 +859,9 @@ footer {
         </div>
         <div class="footer-links">
             <a href="#features">Features</a>
-            <a href="#sessions-section">Live Sessions</a>
             <a href="#how-it-works">How it Works</a>
-            <a href="https://southoakco.github.io/fsfire-sessions" target="_blank">Legacy Sessions</a>
+            <a href="#sessions-section">Live Sessions</a>
+            <a href="https://southoakco.github.io/fsfire-sessions" target="_blank">Sessions Browser</a>
         </div>
         <div class="footer-copy">© 2025 SoCoSim. FS Fire is an unofficial add-on for Microsoft Flight Simulator. Not affiliated with Asobo Studio or Microsoft.</div>
     </div>
@@ -1007,6 +1063,27 @@ footer {
 
     fetchSessions();
     setInterval(tick, 1000);
+})();
+
+/* ── Sessions expand/collapse ── */
+(function() {
+    var wrap = document.getElementById('sessions-collapse-wrap');
+    var btn  = document.getElementById('sessions-expand-btn');
+    if (!wrap || !btn) return;
+    var expanded = false;
+    btn.addEventListener('click', function() {
+        expanded = !expanded;
+        if (expanded) {
+            wrap.classList.add('expanded');
+            btn.textContent = '▲ Collapse Sessions';
+        } else {
+            wrap.classList.remove('expanded');
+            btn.textContent = '▼ Show All Sessions';
+            // Scroll back to sessions header
+            var sec = document.getElementById('sessions-section');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
 })();
 </script>
 </body>
