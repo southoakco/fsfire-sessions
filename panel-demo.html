@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;}
+body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px 16px 48px;}
 .page-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#4b5563;margin-bottom:4px;text-align:center;font-family:'Courier New',monospace;}
 .page-sub{color:#374151;font-size:10px;text-align:center;margin-bottom:14px;}
 .page-sub span{color:#f41216;}
@@ -181,12 +181,8 @@ body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,san
 </style>
 </head>
 <body>
-<p class="page-label">FS Fire — Interactive Panel Demo</p>
-<p class="page-sub">Simulated panel · <span>no simulator required</span> · live satellite fire data</p>
-<div style="width:380px;max-width:100%;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;">
-  <span style="color:#f59e0b;font-size:13px;flex-shrink:0;line-height:1.4;">⚠</span>
-  <span style="font-size:10px;color:#9ca3af;line-height:1.6;"><span style="color:#fbbf24;font-weight:600;">Demo only.</span> This is a simplified interactive preview of the FS Fire panel. Not all features are fully replicated — fire suppression physics, SimConnect data, WASM integration, multiplayer sync, and Xbox controller support require the actual add-on running inside Microsoft Flight Simulator.</span>
-</div>
+<p class="page-label" style="display:none;"></p>
+<p class="page-sub" style="display:none;"></p>
 
 <div class="fsf-panel">
   <div class="panel-titlebar">
