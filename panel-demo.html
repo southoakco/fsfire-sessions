@@ -4,856 +4,952 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>FS Fire — Panel Demo</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0c10;--panel-bg:#111318;--panel-border:#1f2330;
-  --red:#f41216;--red-dim:rgba(244,18,22,0.15);--red-border:rgba(244,18,22,0.35);
-  --text:#e5e7eb;--text-dim:#9ca3af;--text-muted:#4b5563;
-  --btn-bg:rgba(255,255,255,0.06);--btn-hover:rgba(255,255,255,0.11);
-  --btn-active:rgba(244,18,22,0.18);--tab-active:#f41216;
-  --section-header:rgba(244,18,22,0.12);
-  --green:#22c55e;--blue:#3b82f6;--amber:#f59e0b;
-  --fire1:#f97316;--fire2:#ef4444;
-  --font:'JetBrains Mono',monospace;
-}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
-h1{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;text-align:center;font-family:var(--font);}
-.demo-label{color:var(--text-dim);font-size:11px;text-align:center;margin-bottom:18px;letter-spacing:0.05em;}
-.demo-label span{color:var(--red);font-weight:600;}
-
-/* ── DEVICE FRAME ── */
-.device{
-  width:360px;background:var(--panel-bg);border:1px solid var(--panel-border);
-  border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.04);
-  display:flex;flex-direction:column;max-height:620px;
-}
-
-/* ── STATUS BAR ── */
-.status-bar{
-  display:flex;align-items:center;gap:8px;padding:7px 12px;
-  background:rgba(0,0,0,0.4);border-bottom:1px solid var(--panel-border);
-  font-family:var(--font);font-size:10px;
-}
-.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 4px var(--green);}
-.status-text{color:var(--text-dim);flex:1;}
-.status-guest{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;padding:1px 6px;border-radius:3px;font-size:9px;letter-spacing:0.08em;}
-
-/* ── TAB BAR ── */
-.tab-bar{
-  display:flex;background:rgba(0,0,0,0.35);border-bottom:1px solid var(--panel-border);
-}
-.tab{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:7px 2px 6px;cursor:pointer;border-bottom:2px solid transparent;
-  transition:background 0.15s,border-color 0.15s;
-  color:var(--text-muted);
-}
-.tab:hover{background:var(--btn-hover);color:var(--text-dim);}
-.tab.active{border-bottom-color:var(--tab-active);color:#fff;background:rgba(244,18,22,0.07);}
-.tab svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
-.tab.fire-tab svg{fill:currentColor;stroke:none;}
-.tab-label{font-size:9px;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font);}
-
-/* ── CONTENT AREA ── */
-.content{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--panel-border) transparent;}
-.tab-pane{display:none;padding:0;}
-.tab-pane.active{display:block;}
-
-/* ── SECTION HEADERS ── */
-.sec-hdr{
-  background:var(--section-header);border-top:1px solid var(--panel-border);border-bottom:1px solid var(--panel-border);
-  padding:5px 12px;font-size:10px;font-family:var(--font);letter-spacing:0.1em;
-  text-transform:uppercase;color:var(--red);
-}
-.sec-body{padding:10px 12px;}
-.sec-body + .sec-hdr{margin-top:0;}
-
-/* ── BUTTONS ── */
-.fsf-btn{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:var(--btn-bg);border:1px solid rgba(255,255,255,0.1);
-  color:var(--text);border-radius:5px;padding:7px 12px;cursor:pointer;
-  font-size:12px;font-family:inherit;transition:background 0.12s,border-color 0.12s;
-  user-select:none;width:100%;text-align:center;
-}
-.fsf-btn:hover{background:var(--btn-hover);border-color:rgba(255,255,255,0.2);}
-.fsf-btn:active{background:var(--btn-active);transform:scale(0.98);}
-.fsf-btn.danger{background:rgba(244,18,22,0.12);border-color:rgba(244,18,22,0.3);color:#f87171;}
-.fsf-btn.danger:hover{background:rgba(244,18,22,0.2);}
-.fsf-btn.success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#86efac;}
-.fsf-btn.success:hover{background:rgba(34,197,94,0.18);}
-.fsf-btn.accent{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#93c5fd;}
-.fsf-btn.accent:hover{background:rgba(59,130,246,0.2);}
-.fsf-btn.purple{background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3);color:#c4b5fd;}
-.row-2{display:flex;gap:8px;}
-.row-2 .fsf-btn{flex:1;}
-
-/* ── TOGGLE ── */
-.toggle-row{display:flex;align-items:center;gap:10px;padding:4px 0;}
-.toggle-label{color:var(--text-dim);flex:1;font-size:12px;}
-.toggle{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;transition:background 0.2s;}
-.toggle.on{background:rgba(244,18,22,0.7);border-color:rgba(244,18,22,0.5);}
-.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.2s;}
-.toggle.on::after{left:18px;}
-
-/* ── SELECTOR (two-button) ── */
-.selector{display:flex;border:1px solid rgba(255,255,255,0.1);border-radius:5px;overflow:hidden;}
-.sel-btn{flex:1;padding:6px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-dim);transition:background 0.12s,color 0.12s;}
-.sel-btn.active{background:var(--red-dim);color:var(--text);border-color:var(--red-border);}
-
-/* ── MAP TAB ── */
-.map-area{
-  position:relative;height:240px;background:#0f1520;overflow:hidden;
-  border-bottom:1px solid var(--panel-border);
-}
-.map-img{width:100%;height:100%;object-fit:cover;opacity:0.7;}
-.map-placeholder{
-  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,#0a1020 0%,#0f1a2e 50%,#0a1020 100%);
-  position:relative;overflow:hidden;
-}
-.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px);background-size:30px 30px;}
-.map-aircraft{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;}
-.map-aircraft svg{width:22px;height:22px;fill:#3b82f6;drop-shadow:0 0 6px #3b82f6;}
-.fire-marker{position:absolute;width:10px;height:10px;border-radius:50%;cursor:pointer;transform:translate(-50%,-50%);animation:pulse 2s infinite;}
-.fire-marker.lg{width:14px;height:14px;}
-.fire-marker.sm{width:7px;height:7px;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,18,22,0.6);}50%{box-shadow:0 0 0 5px rgba(244,18,22,0);}}
-.drop-marker{position:absolute;width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.3);border:1px solid #3b82f6;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;}
-.drop-marker::after{content:'';width:6px;height:6px;border-radius:50%;background:#3b82f6;}
-.mp-plane{position:absolute;transform:translate(-50%,-50%);}
-.mp-plane svg{width:14px;height:14px;fill:#22c55e;}
-.mp-label{position:absolute;font-size:9px;color:#86efac;font-family:var(--font);white-space:nowrap;transform:translate(-50%,8px);}
-.map-tools{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;z-index:20;}
-.map-btn{width:28px;height:28px;background:rgba(10,12,16,0.85);border:1px solid var(--panel-border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);}
-.map-btn:hover{background:rgba(30,35,50,0.95);color:var(--text);}
-.map-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
-.tooltip-box{display:none;position:absolute;background:rgba(10,12,16,0.95);border:1px solid var(--panel-border);border-radius:5px;padding:7px 10px;font-size:11px;z-index:30;pointer-events:none;min-width:130px;}
-.tooltip-box.visible{display:block;}
-.tt-title{font-family:var(--font);color:var(--red);font-size:10px;letter-spacing:0.08em;margin-bottom:3px;}
-.tt-row{color:var(--text-dim);line-height:1.6;}
-.tt-row b{color:var(--text);}
-.map-coords{position:absolute;bottom:6px;left:8px;font-family:var(--font);font-size:9px;color:rgba(59,130,246,0.8);z-index:20;}
-
-/* ── FIRE INFO ROWS ── */
-.fire-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
-.fire-row:last-child{border-bottom:none;}
-.fire-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.fire-name{flex:1;color:var(--text);font-size:12px;}
-.fire-size-badge{font-family:var(--font);font-size:10px;padding:2px 7px;border-radius:3px;background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;}
-.fire-frp{font-size:10px;color:var(--text-muted);}
-
-/* ── SLIDER ── */
-.slider-row{display:flex;align-items:center;gap:8px;}
-.slider-row input[type=range]{flex:1;accent-color:var(--red);}
-.slider-row span{font-family:var(--font);font-size:11px;color:var(--text-dim);min-width:20px;text-align:center;}
-.size-display{text-align:center;font-family:var(--font);font-size:11px;color:var(--red);margin-top:4px;}
-
-/* ── DROP TAB ── */
-.drop-now-btn{
-  width:100%;padding:16px;background:rgba(244,18,22,0.15);border:2px solid var(--red-border);
-  color:#fff;font-size:16px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
-  border-radius:6px;cursor:pointer;transition:all 0.15s;font-family:var(--font);
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.drop-now-btn:hover{background:rgba(244,18,22,0.28);border-color:var(--red);}
-.drop-now-btn:active{transform:scale(0.97);}
-.drop-now-btn.armed{background:rgba(244,18,22,0.35);border-color:var(--red);animation:armed-pulse 1.2s infinite;}
-@keyframes armed-pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,18,22,0.5);}50%{box-shadow:0 0 0 8px rgba(244,18,22,0);}}
-.gps-coords{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:5px;padding:8px 10px;font-family:var(--font);font-size:11px;color:#93c5fd;margin-top:6px;}
-.stat-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px;border-radius:4px;font-family:var(--font);}
-.stat-pill.alt{background:rgba(34,197,94,0.1);color:#86efac;}
-.stat-pill.spd{background:rgba(59,130,246,0.1);color:#93c5fd;}
-.stat-pill.hdg{background:rgba(245,158,11,0.1);color:#fcd34d;}
-.stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
-
-/* ── MP TAB ── */
-.mp-session-box{background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:10px 12px;}
-.mp-code{font-family:var(--font);font-size:20px;font-weight:700;letter-spacing:4px;color:var(--green);text-align:center;padding:6px 0;}
-.mp-player{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
-.mp-player:last-child{border-bottom:none;}
-.mp-avatar{width:24px;height:24px;border-radius:50%;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#93c5fd;flex-shrink:0;}
-.mp-pname{flex:1;font-size:12px;}
-.mp-host-badge{font-size:9px;padding:1px 5px;background:var(--red-dim);border:1px solid var(--red-border);border-radius:3px;color:#f87171;font-family:var(--font);}
-.mp-guest-badge{font-size:9px;padding:1px 5px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:3px;color:#86efac;font-family:var(--font);}
-.chat-area{background:rgba(0,0,0,0.2);border-radius:5px;padding:8px;max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
-.chat-msg{font-size:11px;line-height:1.4;}
-.chat-msg .sender{color:var(--red);font-family:var(--font);font-size:10px;margin-bottom:1px;}
-.chat-msg .msg-text{color:var(--text-dim);}
-.chat-input-row{display:flex;gap:6px;margin-top:6px;}
-.chat-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;color:var(--text);font-size:12px;font-family:inherit;}
-.chat-input:focus{outline:none;border-color:rgba(255,255,255,0.25);}
-.chat-send{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;border-radius:4px;padding:6px 10px;cursor:pointer;font-size:12px;}
-.qr-box{width:60px;height:60px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.qr-box svg{width:52px;height:52px;}
-
-/* ── MISSIONS TAB ── */
-.mission-card{background:rgba(255,255,255,0.03);border:1px solid var(--panel-border);border-radius:6px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:border-color 0.15s;}
-.mission-card:hover{border-color:rgba(244,18,22,0.3);}
-.mission-card.selected{border-color:var(--red);background:var(--red-dim);}
-.mc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
-.mc-name{font-size:12px;font-weight:600;color:var(--text);}
-.mc-type{font-size:9px;padding:2px 6px;border-radius:3px;font-family:var(--font);}
-.mc-type.wildfire{background:rgba(244,18,22,0.12);border:1px solid var(--red-border);color:#f87171;}
-.mc-type.vehicle{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fcd34d;}
-.mc-type.structure{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
-.mc-loc{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
-.mc-stats{display:flex;gap:8px;font-size:10px;color:var(--text-dim);}
-.medal{font-size:11px;font-family:var(--font);}
-.medal.gold{color:#fbbf24;}
-.medal.silver{color:#9ca3af;}
-.medal.bronze{color:#cd7f32;}
-.eff-bar-wrap{background:rgba(0,0,0,0.3);border-radius:3px;height:6px;overflow:hidden;margin-top:6px;}
-.eff-bar{height:100%;border-radius:3px;transition:width 0.5s;}
-.filter-row{display:flex;gap:4px;flex-wrap:wrap;padding:8px 12px 4px;}
-.filter-btn{font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);cursor:pointer;background:transparent;font-family:var(--font);transition:all 0.12s;}
-.filter-btn.active{background:var(--red-dim);border-color:var(--red-border);color:var(--text);}
-
-/* ── PROPS TAB ── */
-.prop-current{font-family:var(--font);font-size:11px;color:#93c5fd;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:4px;padding:6px 10px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.kbinput{background:var(--btn-bg);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;color:var(--text-dim);font-size:12px;font-family:var(--font);width:100%;cursor:pointer;text-align:left;}
-
-/* ── NOTIFICATION TOAST ── */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(15,20,30,0.97);border:1px solid var(--panel-border);border-radius:6px;padding:9px 16px;font-size:12px;color:var(--text-dim);transition:transform 0.3s;z-index:100;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;}
+.page-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#4b5563;margin-bottom:4px;text-align:center;font-family:'Courier New',monospace;}
+.page-sub{color:#374151;font-size:10px;text-align:center;margin-bottom:14px;}
+.page-sub span{color:#f41216;}
+.fsf-panel{width:380px;max-width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;height:600px;box-shadow:0 20px 60px rgba(0,0,0,.8);}
+.panel-titlebar{display:flex;align-items:center;justify-content:space-between;background:#161b22;padding:0 8px;height:32px;min-height:32px;flex-shrink:0;border-bottom:1px solid #30363d;}
+.panel-logo{font-weight:800;font-size:11px;letter-spacing:2px;color:#f41216;font-family:'Courier New',monospace;}
+.panel-winctrls{display:flex;gap:4px;}
+.panel-winbtn{width:20px;height:20px;border-radius:3px;border:1px solid rgba(244,18,22,.4);background:rgba(244,18,22,.15);color:#f41216;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.panel-winbtn:hover{background:rgba(244,18,22,.3);}
+.fsf-conn-status{display:flex;align-items:center;gap:5px;padding:0 8px;background:#0d1117;border-bottom:1px solid rgba(255,255,255,.05);height:18px;min-height:18px;flex-shrink:0;}
+.fsf-conn-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;}
+.fsf-conn-text{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#22c55e;white-space:nowrap;}
+#TabNavigation{display:flex;align-items:center;height:38px;min-height:38px;flex-shrink:0;background:#161b22;border-bottom:1px solid #30363d;padding:2px 2px 0;position:relative;}
+#TabNavigation::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(244,18,22,.3) 50%,transparent);}
+.tab-button{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;height:36px;padding:0 1px;background:transparent;border:none;cursor:pointer;position:relative;transition:background .15s;}
+.tab-button::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:2px;background:#f41216;border-radius:2px 2px 0 0;opacity:0;transition:opacity .2s;}
+.tab-button:hover{background:rgba(244,18,22,.06);}
+.tab-button.tab-active{background:rgba(244,18,22,.08);}
+.tab-button.tab-active::after{opacity:1;}
+.tab-button svg{width:13px;height:13px;opacity:.45;transition:opacity .15s;flex-shrink:0;}
+.tab-button:hover svg,.tab-button.tab-active svg{opacity:1;}
+.tab-button .lbl{font-size:7.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:#6b7280;transition:color .15s;line-height:1;white-space:nowrap;}
+.tab-button:hover .lbl{color:#9ca3af;}
+.tab-button.tab-active .lbl{color:#f41216;}
+.tab-content{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.tab-content.active{display:flex;}
+.scr{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(244,18,22,.6) transparent;}
+.scr::-webkit-scrollbar{width:8px;}
+.scr::-webkit-scrollbar-thumb{background:rgba(244,18,22,.6);border-radius:4px;}
+.oc{display:flex;flex-direction:column;padding:10px;gap:2px;}
+.sh{background:none;border:none;border-bottom:1px solid rgba(244,18,22,.2);padding:0 0 5px;margin-bottom:7px;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#f41216;}
+.sc{background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;padding:9px 11px;margin-bottom:7px;}
+.lbl2{color:#9ca3af;font-size:11px;font-weight:500;margin-bottom:4px;display:block;}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
+.hint{font-size:10px;color:#6b7280;font-style:italic;margin-top:3px;}
+.btn{display:flex;align-items:center;justify-content:center;min-height:32px;padding:5px 12px;background:rgba(244,18,22,.12);border:1px solid rgba(244,18,22,.3);border-radius:6px;color:#f41216;cursor:pointer;transition:background .12s,transform .08s;user-select:none;text-align:center;line-height:1.3;font-size:11px;font-weight:600;letter-spacing:.5px;}
+.btn:hover{background:rgba(244,18,22,.2);border-color:rgba(244,18,22,.5);}
+.btn:active{transform:scale(.97);}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;}
+.btn-row .btn{flex:1;}
+.btn-mut{background:rgba(107,114,128,.15);border:1px solid rgba(107,114,128,.4);color:#fff;}
+.btn-mut:hover{background:rgba(107,114,128,.25);}
+.btn-dng{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#ef4444;}
+.btn-dng:hover{background:rgba(239,68,68,.25);}
+.btn-acc{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#3b82f6;}
+.btn-acc:hover{background:rgba(59,130,246,.25);}
+.btn-ok{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#22c55e;}
+.btn-ok:hover{background:rgba(34,197,94,.25);}
+.btn-pur{background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);color:#a855f7;}
+.btn-pur:hover{background:rgba(168,85,247,.25);}
+.btn-sm{min-height:26px;padding:3px 9px;font-size:10px;}
+.dsb{padding:7px 4px;border:2px solid rgba(255,255,255,.15);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;transition:all .15s;background:transparent;color:rgba(255,255,255,.4);text-align:center;line-height:1.3;user-select:none;width:100%;}
+.dsb:hover{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.6);}
+.dsb.on{background:#1976D2;color:#fff;border-color:#1976D2;}
+.arm{min-height:40px;width:100%;background:rgba(244,18,22,.2);border:2px solid rgba(244,18,22,.5);color:#f41216;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;user-select:none;transition:background .12s;}
+.arm:hover{background:rgba(244,18,22,.3);}
+.arm.armed{background:rgba(76,175,80,.2);border-color:rgba(76,175,80,.5);color:#4CAF50;animation:ap 2s ease-in-out infinite;}
+@keyframes ap{0%,100%{box-shadow:0 0 4px rgba(76,175,80,.2);}50%{box-shadow:0 0 12px rgba(76,175,80,.4);}}
+.dropnow{min-height:42px;width:100%;background:rgba(239,68,68,.25);border:2px solid rgba(239,68,68,.6);color:#ef4444;font-size:13px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;user-select:none;}
+.dropnow:hover{background:rgba(239,68,68,.35);}
+.tgl{display:flex;align-items:center;cursor:pointer;user-select:none;padding:5px 0;min-height:30px;}
+.tgl-w{display:flex;align-items:center;gap:9px;pointer-events:none;min-width:0;overflow:hidden;}
+.tgl-t{position:relative;width:38px;height:20px;min-width:38px;background:rgba(107,114,128,.35);border:1px solid rgba(107,114,128,.4);border-radius:10px;transition:background .15s,border-color .15s;flex-shrink:0;}
+.tgl-th{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#9ca3af;border-radius:50%;transition:left .15s,background .15s;}
+.tgl-l{font-size:11px;font-weight:500;color:#9ca3af;transition:color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tgl.on .tgl-t{background:rgba(244,18,22,.3);border-color:rgba(244,18,22,.6);}
+.tgl.on .tgl-th{left:20px;background:#f41216;box-shadow:0 0 6px rgba(244,18,22,.5);}
+.tgl.on .tgl-l{color:#e5e7eb;}
+.sel2{display:flex;gap:0;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.12);}
+.sel2-b{flex:1;display:flex;align-items:center;justify-content:center;padding:7px 10px;background:rgba(255,255,255,.04);color:#6b7280;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;user-select:none;white-space:nowrap;}
+.sel2-b:first-child{border-right:1px solid rgba(255,255,255,.08);}
+.sel2-b.on{background:rgba(244,18,22,.2);color:#fff;font-weight:700;}
+.kib{width:100%;margin:2px 0;min-height:32px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 10px;box-sizing:border-box;color:#e5e7eb;font-size:11px;}
+.kib:hover{background:rgba(255,255,255,.08);border-color:rgba(244,18,22,.4);}
+.kib.filled{color:#f41216;font-weight:700;}
+.kib.picking{border-color:#22c55e;color:#22c55e;animation:pickpulse 1s ease-in-out infinite;}
+@keyframes pickpulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+.spawn-glow{animation:spawnglow 1.2s ease-in-out infinite;border-color:rgba(34,197,94,.8)!important;background:rgba(34,197,94,.18)!important;}
+@keyframes spawnglow{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5),0 0 6px rgba(34,197,94,.3);}50%{box-shadow:0 0 0 5px rgba(34,197,94,0),0 0 16px rgba(34,197,94,.6);}}
+.tank-bg{width:100%;height:13px;background:rgba(255,255,255,.1);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,.15);}
+.tank-fill{height:100%;background:linear-gradient(90deg,#1976D2,#42A5F5);border-radius:7px;transition:width .4s;}
+.slider-row{display:flex;align-items:center;gap:7px;}
+.slider-l{color:#6b7280;font-size:10px;font-weight:600;min-width:12px;text-align:center;}
+.fslider{flex:1;position:relative;height:26px;cursor:pointer;user-select:none;touch-action:none;}
+.fslider-track{position:absolute;top:50%;left:0;right:0;height:8px;margin-top:-4px;background:linear-gradient(to right,#22c55e 0%,#f41216 50%,#ef4444 100%);border-radius:4px;border:1px solid rgba(255,255,255,.08);}
+.fslider-thumb{position:absolute;top:50%;width:24px;height:24px;margin-top:-12px;margin-left:-12px;border-radius:50%;background:radial-gradient(circle at 40% 38%,#fbbf24,#f41216 60%,#d97706);border:3px solid #0d1117;box-shadow:0 0 10px rgba(244,18,22,.6);pointer-events:none;left:44%;}
+.size-disp{text-align:center;margin-top:3px;color:#f41216;font-size:10px;font-weight:700;}
+.gps-box{background:rgba(59,130,246,.06);border-left:3px solid rgba(59,130,246,.4);border-radius:4px;padding:6px 9px;font-size:10px;color:rgba(255,255,255,.6);margin-top:5px;}
+.mp-code{font-family:'Consolas','Courier New',monospace;font-size:18px;font-weight:700;letter-spacing:3px;color:#f41216;background:rgba(244,18,22,.08);padding:4px 10px;border-radius:4px;border:1px solid rgba(244,18,22,.2);display:inline-block;}
+.mp-stat{font-size:11px;font-weight:700;}
+.mp-stat.ok{color:#22c55e;}
+.users-list{margin-top:5px;padding:5px;background:rgba(0,0,0,.15);border-radius:6px;min-height:28px;}
+.urow{display:flex;align-items:center;gap:7px;padding:4px 2px;border-bottom:1px solid rgba(255,255,255,.04);}
+.urow:last-child{border-bottom:none;}
+.udot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0;}
+.uname{flex:1;font-size:11px;color:#e5e7eb;}
+.ubadge{font-size:8px;padding:1px 5px;border-radius:2px;font-weight:700;letter-spacing:.5px;}
+.bhost{background:rgba(244,18,22,.9);color:#fff;}
+.bguest{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#86efac;}
+.qrs{text-align:center;padding:12px;}
+.qrl{color:#9ca3af;font-size:11px;margin-bottom:9px;}
+.qrc{display:flex;justify-content:center;align-items:center;margin:0 auto;padding:8px;background:#fff;border-radius:8px;width:100px;height:100px;}
+.qru{color:#6b7280;font-size:8.5px;margin-top:6px;word-break:break-all;line-height:1.4;}
+.mmb{flex:1;text-align:center;padding:6px 8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:#9ca3af;cursor:pointer;font-size:11px;transition:all .15s;}
+.mmb.on{background:rgba(244,18,22,.15);border-color:rgba(244,18,22,.5);color:#f87171;font-weight:700;}
+.mfb{font-size:9.5px;padding:3px 7px;border-radius:10px;border:1px solid rgba(255,255,255,.1);color:#6b7280;cursor:pointer;background:transparent;transition:all .12s;}
+.mfb.on{background:rgba(244,18,22,.3);border-color:#f41216;color:#e5e7eb;}
+.mdot{position:absolute;width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer;animation:fdp 2.5s infinite;}
+.mrbox{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.25);border-radius:6px;padding:8px 10px;font-size:11px;color:#9ca3af;line-height:1.6;}
+.mrbox strong{color:#e5e7eb;}
+.eff-bg{background:rgba(0,0,0,.3);border-radius:3px;height:7px;overflow:hidden;margin-top:5px;}
+.eff-fill{height:100%;border-radius:3px;transition:width .5s;}
+.med{font-size:10px;font-family:'Courier New',monospace;}
+.med.g{color:#fbbf24;}.med.s{color:#9ca3af;}.med.b{color:#cd7f32;}
+.acc-item{border:1px solid rgba(255,255,255,.08);border-radius:6px;margin-bottom:5px;overflow:hidden;}
+.acc-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:rgba(255,255,255,.05);cursor:pointer;user-select:none;transition:background .15s;}
+.acc-hdr:hover{background:rgba(244,18,22,.12);}
+.acc-hdr.open{background:rgba(244,18,22,.15);border-bottom:1px solid rgba(244,18,22,.3);}
+.acc-title{color:#e5e7eb;font-weight:700;font-size:11px;}
+.acc-hdr.open .acc-title{color:#f41216;}
+.acc-arr{display:inline-block;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid #6b7280;transition:transform .2s,border-left-color .15s;flex-shrink:0;}
+.acc-hdr.open .acc-arr{transform:rotate(90deg);border-left-color:#f41216;}
+.acc-body{padding:11px 13px;background:rgba(0,0,0,.15);}
+.acc-body p{color:#d1d5db;font-size:11px;line-height:1.55;margin-bottom:8px;}
+.acc-body p:last-child{margin-bottom:0;}
+.acc-body strong,.acc-body b{color:#f41216;}
+.sobj-panel{position:absolute;top:0;left:0;right:0;bottom:0;z-index:50;background:rgba(13,17,23,.98);border:2px solid rgba(168,85,247,.4);border-radius:8px;padding:12px;overflow-y:auto;display:none;flex-direction:column;gap:8px;}
+.sobj-panel.open{display:flex;}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.mtitle{color:#e5e7eb;font-size:14px;font-weight:700;}
+.cat-btn{padding:5px 10px;border-radius:5px;border:1px solid rgba(255,255,255,.15);color:#fff;font-size:10px;font-weight:600;cursor:pointer;transition:filter .15s;white-space:nowrap;}
+.cat-btn:hover{filter:brightness(1.25);}
+.sobj-list{display:flex;flex-direction:column;gap:2px;max-height:180px;overflow-y:auto;margin-top:6px;padding:4px;}
+.sobj-item{padding:5px 8px;background:rgba(48,54,61,.5);border:1px solid transparent;border-radius:5px;font-size:10px;font-family:'Courier New',monospace;color:#e5e7eb;cursor:pointer;transition:all .12s;}
+.sobj-item:hover{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3);}
+.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(50px);background:rgba(13,17,23,.97);border:1px solid #30363d;border-radius:6px;padding:8px 14px;font-size:11px;color:#9ca3af;transition:transform .25s;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0);}
-.toast b{color:var(--text);}
-
-/* ── DEMO NOTE ── */
-.demo-note{margin-top:14px;font-size:11px;color:var(--text-muted);text-align:center;max-width:360px;line-height:1.6;}
-.demo-note a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px;}
+.toast b{color:#e5e7eb;}
+.demo-note{margin-top:12px;font-size:10px;color:#374151;text-align:center;max-width:380px;line-height:1.6;}
+/* Map tab */
+#MainTabContent{position:relative;flex:1;min-height:0;overflow:hidden;}
+#leaflet-map{width:100%;height:100%;z-index:1;}
+/* Leaflet overrides to match dark theme */
+.leaflet-container{background:#0d1a2e !important;font-family:inherit;}
+.leaflet-control-attribution{display:none!important;}
+.leaflet-control-zoom{display:none!important;}
+/* Map toolbar */
+.map-toolbar{position:absolute;top:50%;left:6px;transform:translateY(-50%);z-index:500;display:flex;flex-direction:column;gap:1px;background:rgba(13,17,23,.88);border:1px solid rgba(48,54,61,.8);border-radius:8px;padding:3px;box-shadow:0 4px 16px rgba(0,0,0,.5);}
+.mb{width:30px;height:30px;padding:0;background:rgba(255,255,255,.04);border:none;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s;}
+.mb:hover{background:rgba(244,18,22,.15);}
+.mb svg{width:16px;height:16px;color:#9ca3af;fill:#9ca3af;flex-shrink:0;pointer-events:none;}
+.mb:hover svg,.mb.on svg{color:#f41216;fill:#f41216;}
+.mb.on{background:rgba(244,18,22,.2);box-shadow:inset 0 0 0 1px rgba(244,18,22,.4);}
+.tdiv{height:1px;background:rgba(48,54,61,.6);margin:2px 4px;}
+.compass{position:absolute;top:6px;right:6px;z-index:500;width:52px;height:52px;}
+.compass svg{width:52px;height:52px;}
+.ctrl-row{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);z-index:500;display:flex;align-items:center;gap:10px;padding:3px 12px;background:rgba(13,17,23,.88);border:1px solid rgba(48,54,61,.8);border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,.5);}
+.crb{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s;}
+.crb:hover,.crb.on{background:rgba(244,18,22,.2);border-color:rgba(244,18,22,.4);}
+.crb svg{width:14px;height:14px;color:#9ca3af;fill:#9ca3af;pointer-events:none;}
+.crb.on svg{color:#f41216;fill:#f41216;}
+.fire-count-pill{position:absolute;bottom:34px;right:8px;z-index:500;background:rgba(13,17,23,.88);border:1px solid rgba(48,54,61,.8);color:#f41216;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:600;}
+.coords-bar{position:absolute;bottom:34px;left:48px;z-index:500;font-size:8.5px;color:rgba(59,130,246,.8);font-family:'Courier New',monospace;}
+/* Map click mode overlay */
+.map-click-overlay{position:absolute;inset:0;z-index:600;cursor:crosshair;display:none;}
+.map-click-banner{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:700;background:rgba(34,197,94,.9);color:#fff;font-size:11px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;box-shadow:0 2px 12px rgba(0,0,0,.4);display:none;}
+/* fire popup */
+@keyframes fdp{0%,100%{box-shadow:0 0 0 0 rgba(244,18,22,.6);}50%{box-shadow:0 0 0 4px rgba(244,18,22,0);}}
+.leaflet-div-icon{background:transparent;border:none;}
 </style>
 </head>
 <body>
+<p class="page-label">FS Fire — Interactive Panel Demo</p>
+<p class="page-sub">Simulated panel · <span>no simulator required</span> · live satellite fire data</p>
+<div style="width:380px;max-width:100%;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;">
+  <span style="color:#f59e0b;font-size:13px;flex-shrink:0;line-height:1.4;">⚠</span>
+  <span style="font-size:10px;color:#9ca3af;line-height:1.6;"><span style="color:#fbbf24;font-weight:600;">Demo only.</span> This is a simplified interactive preview of the FS Fire panel. Not all features are fully replicated — fire suppression physics, SimConnect data, WASM integration, multiplayer sync, and Xbox controller support require the actual add-on running inside Microsoft Flight Simulator.</span>
+</div>
 
-<h1>FS Fire — Interactive Panel Demo</h1>
-<p class="demo-label">Simulated panel • <span>not connected to a simulator</span></p>
-
-<div class="device">
-
-  <!-- STATUS BAR -->
-  <div class="status-bar">
-    <div class="status-dot"></div>
-    <span class="status-text" id="status-text">Connected · MSFS 2024</span>
-    <span class="status-guest" style="display:none" id="guest-badge">GUEST</span>
+<div class="fsf-panel">
+  <div class="panel-titlebar">
+    <span class="panel-logo">FS FIRE</span>
+    <div class="panel-winctrls"><div class="panel-winbtn">─</div><div class="panel-winbtn">⤢</div><div class="panel-winbtn">✕</div></div>
+  </div>
+  <div class="fsf-conn-status"><div class="fsf-conn-dot" id="cndot"></div><span class="fsf-conn-text" id="cntxt">WASM CONNECTED · MSFS 2024</span></div>
+  <div id="TabNavigation">
+    <div class="tab-button tab-active" data-tab="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg><span class="lbl">Map</span></div>
+    <div class="tab-button" data-tab="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span class="lbl">Drop</span></div>
+    <div class="tab-button" data-tab="fires"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg><span class="lbl">Fires</span></div>
+    <div class="tab-button" data-tab="missions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span class="lbl">Missions</span></div>
+    <div class="tab-button" data-tab="props"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span class="lbl">Props</span></div>
+    <div class="tab-button" data-tab="mp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="lbl">MP</span></div>
+    <div class="tab-button" data-tab="info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span class="lbl">Info</span></div>
   </div>
 
-  <!-- TAB BAR -->
-  <div class="tab-bar">
-    <div class="tab active" data-tab="map">
-      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-      <span class="tab-label">Map</span>
+  <!-- MAP TAB -->
+  <div class="tab-content active" id="pane-map" style="position:relative;">
+    <div id="leaflet-map"></div>
+    <div class="map-click-banner" id="map-banner"></div>
+    <div class="map-click-overlay" id="map-overlay"></div>
+    <div class="compass"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="35.5" fill="rgba(13,17,23,.85)" stroke="rgba(48,54,61,.8)" stroke-width="1"/><path d="M36 12L30 30H34V36H38V30H42L36 12Z" fill="#f41216"/><text x="36" y="58" font-size="14" fill="white" text-anchor="middle" font-weight="bold" font-family="sans-serif">N</text></svg></div>
+    <div class="map-toolbar">
+      <div class="mb" title="Center on aircraft" onclick="centerMap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></div>
+      <div class="tdiv"></div>
+      <div class="mb" title="Zoom in" onclick="map.zoomIn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="mb" title="Zoom out" onclick="map.zoomOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="tdiv"></div>
+      <div class="mb" title="Pan up" onclick="panMap(0,-100)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg></div>
+      <div class="mb" title="Pan down" onclick="panMap(0,100)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="mb" title="Pan left" onclick="panMap(-100,0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+      <div class="mb" title="Pan right" onclick="panMap(100,0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 6 15 12 9 18"/></svg></div>
+      <div class="tdiv"></div>
+      <div class="mb" title="Clear drop markers" onclick="clearDrops()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></div>
+      <div class="mb" id="layer-btn" title="Change map layer" onclick="cycleLayer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+      <div class="mb" id="follow-btn" title="Follow aircraft" onclick="toggleFollow()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7L12 2z"/></svg></div>
+      <div class="mb on" id="northup-btn" title="North up" onclick="toggleNorthUp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg></div>
+      <div class="mb" id="declutter-btn" title="Declutter: All" onclick="cycleDeclutter()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+      <div class="mb" title="Hide UI" onclick="toast('UI hidden — click Show UI to restore')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
     </div>
-    <div class="tab" data-tab="drop">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-      <span class="tab-label">Drop</span>
+    <div class="ctrl-row">
+      <div class="crb on" id="cr-follow" title="Follow" onclick="toggleFollow()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4.5 20.3l.7.7L12 18l6.8 3 .7-.7L12 2z"/></svg></div>
+      <div class="crb" id="cr-north" title="North Up" onclick="toggleNorthUp()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg></div>
+      <div class="crb" id="cr-decl" title="Declutter" onclick="cycleDeclutter()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
     </div>
-    <div class="tab fire-tab" data-tab="fires">
-      <svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>
-      <span class="tab-label">Fires</span>
-    </div>
-    <div class="tab" data-tab="missions">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      <span class="tab-label">Missions</span>
-    </div>
-    <div class="tab" data-tab="props">
-      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-      <span class="tab-label">Props</span>
-    </div>
-    <div class="tab" data-tab="mp">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span class="tab-label">MP</span>
-    </div>
-    <div class="tab" data-tab="info">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span class="tab-label">Info</span>
-    </div>
+    <div class="fire-count-pill" id="fire-count-pill">Loading...</div>
+    <div class="coords-bar" id="coords-bar">0.0000 N · 0.0000 W</div>
   </div>
 
-  <!-- CONTENT -->
-  <div class="content">
+  <!-- DROP TAB -->
+  <div class="tab-content" id="pane-drop">
+    <div class="scr"><div class="oc">
+      <div class="sh">DROP SYSTEM</div>
+      <div class="sc">
+        <div style="display:flex;gap:6px;">
+          <button class="dsb on" id="sys-fs" onclick="selDropSys(this)">FS Fire Drop Effect System</button>
+          <button class="dsb" id="sys-ms" onclick="selDropSys(this)">MSFS Liquid Drop System</button>
+        </div>
+      </div>
+      <div class="sh">LIQUID TANK</div>
+      <div class="sc">
+        <div style="display:flex;gap:6px;margin-bottom:6px;">
+          <button class="dsb on" id="tank-u" onclick="selTank(this,'u')">Unlimited Drops</button>
+          <button class="dsb" id="tank-r" onclick="selTank(this,'r')">Require Liquid Refill</button>
+        </div>
+        <div id="refill-row" style="display:none;gap:6px;margin-bottom:6px;">
+          <button class="dsb on" style="flex:1;" onclick="sel2btn(this)">Land to Refill</button>
+          <button class="dsb" style="flex:1;" onclick="sel2btn(this)">Water Scoop to Refill</button>
+        </div>
+        <div id="tank-bar-wrap" style="display:none;">
+          <label class="lbl2" style="font-size:10px!important;">Liquid Remaining:</label>
+          <div class="tank-bg"><div class="tank-fill" style="width:78%;"></div></div>
+          <div style="font-size:9px;color:rgba(255,255,255,.4);text-align:center;margin-top:2px;">78%</div>
+        </div>
+      </div>
+      <div class="sh">DROP OPTIONS</div>
+      <div class="sc">
+        <label class="lbl2" style="font-size:10px!important;">Drop Type:</label>
+        <div class="sel2" style="margin-bottom:8px;"><div class="sel2-b on" onclick="sel2(this)">Red Retardant</div><div class="sel2-b" onclick="sel2(this)">Water</div></div>
+        <label class="lbl2" style="font-size:10px!important;">Helicopter Drop Type:</label>
+        <div class="sel2" style="margin-bottom:7px;"><div class="sel2-b on" id="heli-f" onclick="selHeli(this,'f')">Fuselage</div><div class="sel2-b" id="heli-b" onclick="selHeli(this,'b')">Bucket</div></div>
+        <div id="bucket-row" style="display:none;align-items:center;gap:6px;">
+          <label class="lbl2" style="font-size:10px!important;margin:0;white-space:nowrap;">Spawn Bucket:</label>
+          <button class="dsb on" style="flex:1;" onclick="sel2btn(this)">On</button>
+          <button class="dsb" style="flex:1;" onclick="sel2btn(this)">Off</button>
+        </div>
+      </div>
+      <div class="sh">DROP CONTROLS</div>
+      <div class="sc" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:6px;">
+          <div class="arm" id="gps-arm" onclick="toggleGPS()" style="flex:1;">GPS DROP</div>
+          <div class="arm" id="gps-dis" onclick="toggleGPS()" style="flex:1;display:none;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#ef4444;">DISARM</div>
+        </div>
+        <div id="gps-box" class="gps-box" style="display:none;">GPS Drop Coordinates:<br/><span style="color:#e5e7eb;font-family:'Courier New',monospace;" id="gps-coord-txt">Click map to set target</span></div>
+        <div class="dropnow" id="drop-now-btn" onclick="doDrop()">DROP NOW</div>
+      </div>
+    </div></div>
+  </div>
 
-    <!-- MAP TAB -->
-    <div class="tab-pane active" id="pane-map">
-      <div class="map-area">
-        <div class="map-placeholder">
-          <div class="map-grid"></div>
-          <!-- Aircraft -->
-          <div class="map-aircraft" id="map-aircraft">
-            <svg viewBox="0 0 24 24"><path d="M21 16l-9-4-9 4V4l9-4 9 4v12z" fill="#3b82f6"/><path d="M12 20v-8" stroke="#93c5fd" stroke-width="1" fill="none"/></svg>
-          </div>
-          <!-- Fire markers -->
-          <div class="fire-marker lg" style="top:38%;left:62%;background:var(--red);" data-fire="0" id="fm0"></div>
-          <div class="fire-marker" style="top:55%;left:35%;background:#f97316;" data-fire="1" id="fm1"></div>
-          <div class="fire-marker sm" style="top:28%;left:45%;background:#f97316;" data-fire="2" id="fm2"></div>
-          <div class="fire-marker lg" style="top:68%;left:72%;background:var(--red);" data-fire="3" id="fm3"></div>
-          <!-- MP plane -->
-          <div class="mp-plane" style="top:30%;left:75%;" id="mp-plane" style="display:none">
-            <svg viewBox="0 0 24 24"><path d="M21 16l-9-4-9 4V4l9-4 9 4v12z" fill="#22c55e"/></svg>
-          </div>
-          <div class="mp-label" style="top:30%;left:75%;" id="mp-label" style="display:none">N7823T</div>
-          <!-- Drop marker -->
-          <div class="drop-marker" style="top:44%;left:60%;display:none;" id="drop-mark"></div>
-          <!-- Tooltip -->
-          <div class="tooltip-box" id="fire-tooltip">
-            <div class="tt-title" id="tt-title">FIRE</div>
-            <div class="tt-row"><b id="tt-size">SIZE 8</b></div>
-            <div class="tt-row">FRP: <b id="tt-frp">312 MW</b></div>
-            <div class="tt-row">Alt: <b id="tt-agl">— ft AGL</b></div>
-          </div>
-        </div>
-        <!-- Map tools -->
-        <div class="map-tools">
-          <div class="map-btn" title="Center on aircraft" onclick="toast('Centering on aircraft')">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-          </div>
-          <div class="map-btn" onclick="toast('Zoomed in')">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </div>
-          <div class="map-btn" onclick="toast('Zoomed out')">
-            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </div>
-          <div class="map-btn" id="northup-btn" title="Toggle north-up" onclick="toggleNorthUp(this)">
-            <svg viewBox="0 0 24 24"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>
-          </div>
-          <div class="map-btn" id="declutter-btn" title="Declutter" onclick="cycleDeclutter(this)">
-            <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          </div>
-        </div>
-        <div class="map-coords" id="map-coords">37.8124° N · 122.4142° W</div>
+  <!-- FIRES TAB -->
+  <div class="tab-content" id="pane-fires">
+    <div class="scr"><div class="oc">
+      <div class="sh">LIVE FIRES</div>
+      <div class="sc">
+        <div class="tgl on" id="live-tgl" onclick="toggleLive()"><div class="tgl-w"><div class="tgl-t"><div class="tgl-th"></div></div><span class="tgl-l">Spawn Live Fires</span></div></div>
+        <div style="font-size:10px;color:#6b7280;margin-top:4px;" id="live-status">Loading satellite data...</div>
       </div>
-      <!-- Live fires list -->
-      <div class="sec-hdr">Live Hotspots — VIIRS NOAA-20</div>
-      <div class="sec-body">
-        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">N California Complex</span><span class="fire-size-badge">SIZE 8</span><span class="fire-frp">312 MW</span></div>
-        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Oregon Coast Range</span><span class="fire-size-badge">SIZE 5</span><span class="fire-frp">87 MW</span></div>
-        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Sierra Nevada Foothills</span><span class="fire-size-badge">SIZE 3</span><span class="fire-frp">41 MW</span></div>
-        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">S California Scrub</span><span class="fire-size-badge">SIZE 9</span><span class="fire-frp">487 MW</span></div>
-      </div>
-      <div class="sec-body" style="padding-top:0;">
-        <div style="font-size:10px;color:var(--text-muted);font-family:monospace;text-align:right;">Updated 4 min ago · 4 fires in range</div>
-      </div>
-    </div>
-
-    <!-- DROP TAB -->
-    <div class="tab-pane" id="pane-drop">
-      <div class="sec-hdr">Drop Configuration</div>
-      <div class="sec-body">
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">DROP TYPE</div>
-          <div class="selector">
-            <div class="sel-btn active" onclick="selectDrop(this,'Retardant')">Red Retardant</div>
-            <div class="sel-btn" onclick="selectDrop(this,'Water')">Water</div>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">TANK MODE</div>
-          <div style="display:flex;gap:5px;">
-            <div class="fsf-btn active" style="flex:1;font-size:11px;" onclick="selectTank(this,'Unlimited')">Unlimited</div>
-            <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectTank(this,'Land Refill')">Land Refill</div>
-            <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectTank(this,'Water Scoop')">Water Scoop</div>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">HELICOPTER MODE</div>
-          <div class="selector">
-            <div class="sel-btn active" onclick="selectHeli(this,'Fuselage')">Fuselage Drop</div>
-            <div class="sel-btn" onclick="selectHeli(this,'Bucket')">Bucket</div>
-          </div>
-        </div>
-      </div>
-      <div class="sec-hdr">Flight Parameters</div>
-      <div class="sec-body">
-        <div class="stats-row">
-          <div class="stat-pill alt">ALT: <b>850 ft AGL</b></div>
-          <div class="stat-pill spd">GS: <b>118 kts</b></div>
-          <div class="stat-pill hdg">HDG: <b>247°</b></div>
-        </div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:8px;font-family:monospace;line-height:1.7;">
-          Drop zone offset: <span style="color:var(--text-dim);">+340 ft forward</span><br/>
-          Splash radius: <span style="color:var(--text-dim);">~68 ft</span>
-        </div>
-      </div>
-      <div class="sec-hdr">GPS Drop</div>
-      <div class="sec-body">
-        <div class="toggle-row" style="margin-bottom:8px;">
-          <span class="toggle-label">Arm GPS Drop</span>
-          <div class="toggle" id="gps-toggle" onclick="toggleGPS(this)"></div>
-        </div>
-        <div class="gps-coords" id="gps-coords" style="display:none;">
-          Target: <b>37.8041° N · 122.4156° W</b><br/>
-          Distance: <span style="color:var(--text-dim);">1.8 nm · bearing 194°</span>
-        </div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Click map to set GPS target coordinates</div>
-      </div>
-      <div class="sec-body" style="padding-top:0;">
-        <div class="drop-now-btn" id="drop-btn" onclick="doDrop()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 1 5 5c0 5-5 11-5 11S7 12 7 7a5 5 0 0 1 5-5z"/></svg>
-          DROP NOW
-        </div>
-      </div>
-    </div>
-
-    <!-- FIRES TAB -->
-    <div class="tab-pane" id="pane-fires">
-      <div class="sec-hdr">Spawn Custom Fire</div>
-      <div class="sec-body">
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">COORDINATES</div>
-          <div class="row-2">
-            <div class="kbinput">37.8124° N</div>
-            <div class="kbinput">122.4142° W</div>
-          </div>
-          <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">Or click map to place</div>
-        </div>
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-family:monospace;">FIRE SIZE</div>
+      <div class="sh">CUSTOM FIRE</div>
+      <div class="sc">
+        <div class="row"><label class="lbl2" style="margin:0;">Coordinates:</label><div class="btn btn-acc btn-sm" onclick="startMapClick('fire-lat','fire-lon','fire')">MAP CLICK</div></div>
+        <div class="kib filled" id="fire-lat" style="margin-bottom:3px;">37.8124 N</div>
+        <div class="kib filled" id="fire-lon">122.4142 W</div>
+        <div style="margin-top:10px;">
+          <label class="lbl2" style="font-size:10px!important;">Fire Size:</label>
           <div class="slider-row">
-            <span>1</span>
-            <input type="range" min="1" max="10" value="5" id="fire-size-slider" oninput="updateFireSize(this.value)"/>
-            <span>10</span>
+            <span class="slider-l">1</span>
+            <div class="fslider" id="fslider" onmousedown="startSlider(event,this)"><div class="fslider-track"></div><div class="fslider-thumb" id="fthumb" style="left:44%;"></div></div>
+            <span class="slider-l">10</span>
           </div>
-          <div class="size-display" id="fire-size-display">Size: 5</div>
+          <div class="size-disp" id="fsize-lbl">Size: 5</div>
         </div>
-        <div class="toggle-row" style="margin-bottom:10px;">
-          <span class="toggle-label">Wind-driven spread</span>
-          <div class="toggle" onclick="this.classList.toggle('on');toast(this.classList.contains('on')?'Fire spread enabled':'Fire spread disabled')"></div>
+        <div style="margin-top:7px;padding-top:7px;border-top:1px solid rgba(48,54,61,.4);">
+          <div class="tgl" id="spread-tgl" onclick="togEl(this,'Fire spread enabled','Fire spread disabled')"><div class="tgl-w"><div class="tgl-t"><div class="tgl-th"></div></div><span class="tgl-l">Spread Capable</span></div></div>
+          <div class="hint">Fire spreads downwind based on wind speed</div>
         </div>
-        <div class="row-2">
-          <div class="fsf-btn success" onclick="spawnFire()">Spawn Fire</div>
-          <div class="fsf-btn danger" onclick="toast('All fires cleared')">Clear All</div>
+        <div class="btn-row" style="margin-top:9px;">
+          <div class="btn btn-ok" id="spawn-fire-btn" onclick="spawnFire()">SPAWN CUSTOM FIRE</div>
+          <div class="btn btn-dng" onclick="clearUserFires()">CLEAR ALL</div>
         </div>
-        <div style="height:8px;"></div>
-        <div class="fsf-btn" onclick="toast('Random fire spawned nearby')">Random Nearby</div>
+        <div style="margin-top:6px;"><div class="btn" onclick="spawnRandomFire()">RANDOM FIRE SPAWN</div></div>
       </div>
-      <div class="sec-hdr">Active Fires</div>
-      <div class="sec-body">
-        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">N California Complex</span><span class="fire-size-badge">SIZE 8</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
-        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Oregon Coast Range</span><span class="fire-size-badge">SIZE 5</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
-        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Custom Fire #1</span><span class="fire-size-badge">SIZE 5</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
-      </div>
-    </div>
+    </div></div>
+  </div>
 
-    <!-- MISSIONS TAB -->
-    <div class="tab-pane" id="pane-missions">
-      <div class="filter-row">
-        <div class="filter-btn active" onclick="setFilter(this,'all')">All</div>
-        <div class="filter-btn" onclick="setFilter(this,'wildfire')">Wildfire</div>
-        <div class="filter-btn" onclick="setFilter(this,'vehicle')">Vehicle</div>
-        <div class="filter-btn" onclick="setFilter(this,'structure')">Structure</div>
-      </div>
-      <div class="sec-body" id="mission-list">
-        <div class="mission-card" id="mc0" onclick="selectMission(0)">
-          <div class="mc-header"><div class="mc-name">Yosemite Valley Fire</div><div class="mc-type wildfire">Wildfire</div></div>
-          <div class="mc-loc">Yosemite NP, California, USA</div>
-          <div class="mc-stats"><span>☀ Daytime</span><span>Min drops: 4</span><span class="medal gold">🥇 Gold</span></div>
-        </div>
-        <div class="mission-card" id="mc1" onclick="selectMission(1)">
-          <div class="mc-header"><div class="mc-name">Highway Tanker Incident</div><div class="mc-type vehicle">Vehicle</div></div>
-          <div class="mc-loc">I-5 Corridor, Oregon, USA</div>
-          <div class="mc-stats"><span>🌆 Dusk</span><span>Min drops: 2</span><span class="medal silver">🥈 Silver</span></div>
-        </div>
-        <div class="mission-card" id="mc2" onclick="selectMission(2)">
-          <div class="mc-header"><div class="mc-name">Warehouse Fire — Porto</div><div class="mc-type structure">Structure</div></div>
-          <div class="mc-loc">Porto Industrial Zone, Portugal</div>
-          <div class="mc-stats"><span>🌙 Night</span><span>Min drops: 3</span><span style="color:var(--text-muted);font-size:10px;">Not completed</span></div>
-        </div>
-        <div class="mission-card" id="mc3" onclick="selectMission(3)">
-          <div class="mc-header"><div class="mc-name">Patagonia Crown Fire</div><div class="mc-type wildfire">Wildfire</div></div>
-          <div class="mc-loc">Torres del Paine, Chile</div>
-          <div class="mc-stats"><span>☀ Daytime</span><span>Min drops: 6</span><span class="medal bronze">🥉 Bronze</span></div>
+  <!-- MISSIONS TAB -->
+  <div class="tab-content" id="pane-missions">
+    <div class="scr"><div class="oc">
+      <div class="sh">MISSION MODE</div>
+      <div class="sc" style="padding:6px 8px;">
+        <div style="display:flex;gap:6px;">
+          <div class="mmb on" id="mode-sp" onclick="selMode(this,'sp')">Single Player</div>
+          <div class="mmb" id="mode-mp" onclick="selMode(this,'mp')">Multiplayer</div>
         </div>
       </div>
-      <div id="mission-briefing" style="display:none;">
-        <div class="sec-hdr">Mission Briefing</div>
-        <div class="sec-body">
-          <div id="briefing-content" style="color:var(--text-dim);font-size:12px;line-height:1.6;margin-bottom:10px;"></div>
-          <div class="eff-bar-wrap"><div class="eff-bar" id="eff-bar" style="width:0%;background:var(--green);"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:monospace;margin-top:2px;margin-bottom:10px;"><span>Bronze</span><span>Silver</span><span>Gold</span></div>
-          <div class="row-2">
-            <div class="fsf-btn success" onclick="startMission()">Start Mission</div>
-            <div class="fsf-btn" onclick="closeBriefing()">Close</div>
+      <div class="sh">MISSION BROWSER</div>
+      <div class="sc" style="padding:6px 0 0;">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;padding:0 8px 6px;">
+          <div class="mfb on" onclick="setFilt(this)">All</div>
+          <div class="mfb" onclick="setFilt(this)">Wildfire</div>
+          <div class="mfb" onclick="setFilt(this)">Vehicle</div>
+          <div class="mfb" onclick="setFilt(this)">Boat</div>
+          <div class="mfb" onclick="setFilt(this)">Structure</div>
+          <div class="mfb" onclick="setFilt(this)">Completed</div>
+        </div>
+        <div style="width:100%;height:130px;background:#0a1220;position:relative;overflow:hidden;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);" id="mini-map-wrap">
+          <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.04) 1px,transparent 1px);background-size:24px 24px;"></div>
+          <div class="mdot" style="top:35%;left:55%;background:#f41216;" onclick="showBrief(0)"></div>
+          <div class="mdot" style="top:60%;left:30%;background:#f97316;" onclick="showBrief(1)"></div>
+          <div class="mdot" style="top:40%;left:70%;background:#3b82f6;" onclick="showBrief(2)"></div>
+          <div class="mdot" style="top:25%;left:45%;background:#f41216;" onclick="showBrief(3)"></div>
+        </div>
+        <div style="padding:3px 10px 5px;color:#6b7280;font-size:9px;">325 missions loaded · click dot to select</div>
+      </div>
+      <div id="brief-panel" style="display:none;">
+        <div class="sh">MISSION BRIEFING</div>
+        <div class="sc">
+          <div class="mrbox" id="brief-content"></div>
+          <div class="eff-bg" style="margin-top:7px;"><div class="eff-fill" id="eff-fill" style="width:0%;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#4b5563;font-family:'Courier New',monospace;margin:2px 0 8px;"><span>Bronze</span><span>Silver</span><span>Gold</span></div>
+          <div style="display:flex;gap:6px;">
+            <div class="btn btn-ok" onclick="toast('Mission starting...');document.getElementById('brief-panel').style.display='none'">Start Mission</div>
+            <div class="btn btn-mut btn-sm" onclick="document.getElementById('brief-panel').style.display='none'">Close</div>
           </div>
         </div>
       </div>
-      <div class="sec-hdr">Logbook</div>
-      <div class="sec-body">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">3 missions completed · Best efficiency: 100%</div>
-        <div style="font-size:11px;display:flex;flex-direction:column;gap:4px;">
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Yosemite Valley Fire</span><span class="medal gold">🥇 100%</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Highway Tanker Incident</span><span class="medal silver">🥈 75%</span></div>
-          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Patagonia Crown Fire</span><span class="medal bronze">🥉 62%</span></div>
+      <div class="sh">LOGBOOK</div>
+      <div class="sc">
+        <div style="font-size:10px;color:#9ca3af;margin-bottom:6px;">3 missions completed · Best efficiency: 100%</div>
+        <div style="display:flex;flex-direction:column;gap:3px;font-size:10px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:#9ca3af;">Yosemite Valley Fire</span><span class="med g">🥇 100%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:#9ca3af;">Highway Tanker — I-5</span><span class="med s">🥈 75%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:#9ca3af;">Patagonia Crown Fire</span><span class="med b">🥉 62%</span></div>
         </div>
       </div>
-    </div>
+      <div class="sh">ACHIEVEMENTS</div>
+      <div class="sc">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;"><span style="font-size:10px;color:#9ca3af;">Total Score: <b style="color:#fbbf24;">4,850</b></span><span style="font-size:9px;color:#6b7280;">3 missions</span></div>
+        <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:5px;padding:7px 9px;font-size:10px;color:#fbbf24;font-weight:700;letter-spacing:1px;text-align:center;margin-bottom:5px;">DAILY CHALLENGE · 2x POINTS!</div>
+        <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:5px;padding:6px 8px;font-size:10px;">
+          <div style="color:#22c55e;font-weight:700;letter-spacing:.5px;margin-bottom:3px;">WEEKLY GOALS</div>
+          <div style="color:#9ca3af;">Complete 5 missions · <span style="color:#e5e7eb;">3/5</span></div>
+          <div style="background:rgba(0,0,0,.2);border-radius:3px;height:5px;margin-top:4px;overflow:hidden;"><div style="width:60%;height:100%;background:#22c55e;border-radius:3px;"></div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
 
-    <!-- PROPS TAB -->
-    <div class="tab-pane" id="pane-props">
-      <div class="sec-hdr">Simobject Selection</div>
-      <div class="sec-body">
-        <div class="row-2" style="margin-bottom:8px;">
-          <div class="fsf-btn accent" onclick="toast('Opening user entry…')">User Entry</div>
-          <div class="fsf-btn purple" onclick="openBrowser()">Browse List</div>
-        </div>
-        <div class="prop-current" id="prop-current">Microsoft_Truck_Fire_Long</div>
+  <!-- PROPS TAB -->
+  <div class="tab-content" id="pane-props" style="position:relative;">
+    <div class="scr"><div class="oc">
+      <div class="sh">PROP SELECTION</div>
+      <div class="sc">
+        <div class="row" style="margin-bottom:6px;"><span style="color:#9ca3af;font-size:11px;">Prop object</span><div class="btn btn-ok btn-sm" onclick="toast('Enter simobject name directly')">User Entry</div><div class="btn btn-pur btn-sm" onclick="openSobj()">Browse List</div></div>
+        <div class="kib" id="prop-disp" style="justify-content:flex-start;">Microsoft_Truck_Fire_Long</div>
       </div>
-      <div class="sec-hdr">Spawn Location</div>
-      <div class="sec-body">
-        <div style="margin-bottom:8px;">
-          <div class="row-2" style="margin-bottom:6px;">
-            <div class="kbinput">37.8124° N</div>
-            <div class="kbinput">122.4142° W</div>
-          </div>
-          <div class="kbinput" style="margin-bottom:6px;">Heading: 090°</div>
-          <div class="fsf-btn accent" style="margin-bottom:6px;" onclick="toast('Click map to place prop…')">Set by Map Click</div>
-          <div class="fsf-btn success" onclick="spawnProp()">Spawn Prop</div>
-        </div>
+      <div class="sh">SPAWN LOCATION</div>
+      <div class="sc">
+        <div class="row"><label class="lbl2" style="margin:0;">Coordinates:</label><div class="btn btn-acc btn-sm" onclick="startMapClick('prop-lat','prop-lon','prop')">MAP CLICK</div></div>
+        <div class="kib filled" id="prop-lat" style="margin-bottom:3px;">37.8124 N</div>
+        <div class="kib filled" id="prop-lon" style="margin-bottom:3px;">122.4142 W</div>
+        <div class="kib" id="prop-hdg" style="margin-bottom:6px;">Heading (ex: 090)</div>
+        <div class="btn btn-ok" id="spawn-prop-btn" onclick="spawnProp()">SPAWN PROP</div>
       </div>
-      <div class="sec-hdr">Scene Management</div>
-      <div class="sec-body">
-        <div class="row-2" style="margin-bottom:6px;">
-          <div class="fsf-btn success" onclick="toast('Scene saved!')">Save Scene</div>
-          <div class="fsf-btn accent" onclick="toast('Loading saved scenes…')">Load Scene</div>
-        </div>
-        <div class="fsf-btn danger" onclick="toast('All props cleared')">Clear All Props</div>
+      <div class="sh">SCENE MANAGEMENT</div>
+      <div class="sc">
+        <div class="btn-row" style="margin-bottom:7px;"><div class="btn btn-ok" onclick="toast('Scene saved!')">Save Scene</div><div class="btn btn-acc" onclick="toast('Loading scenes...')">Load Scene</div></div>
+        <div class="btn btn-dng" onclick="toast('All props cleared');propMarkers.forEach(function(m){map.removeLayer(m);});propMarkers=[];">Clear All Props</div>
       </div>
-      <!-- Mini browser -->
-      <div id="prop-browser" style="display:none;">
-        <div class="sec-hdr">Simobject Browser</div>
-        <div class="sec-body">
-          <div class="row-2" style="margin-bottom:8px;">
-            <div class="fsf-btn accent" style="font-size:11px;" onclick="loadSource('2020')">MSFS 2020</div>
-            <div class="fsf-btn success" style="font-size:11px;" onclick="loadSource('2024')">MSFS 2024</div>
-            <div class="fsf-btn" style="font-size:11px;" onclick="toast('Scanning VFS…')">Scan VFS</div>
-          </div>
-          <div id="browser-cats" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"></div>
-          <div id="browser-items" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
-          <div class="fsf-btn danger" style="margin-top:8px;" onclick="closeBrowser()">Close</div>
-        </div>
+    </div></div>
+    <div class="sobj-panel" id="sobj-panel">
+      <div class="mhdr"><span class="mtitle">Simobject Browser</span><div class="btn btn-dng btn-sm" onclick="closeSobj()">X</div></div>
+      <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">Source:</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button class="dsb on" id="src-2020" onclick="loadSrc(this,'2020')">MSFS 2020</button>
+        <button class="dsb" id="src-2024" onclick="loadSrc(this,'2024')">MSFS 2024</button>
+        <button class="dsb" onclick="toast('Scanning MSFS VFS...')">Scan VFS</button>
       </div>
+      <div style="font-size:10px;color:#9ca3af;margin-bottom:4px;">Category:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;" id="cat-grid"></div>
+      <div class="sobj-list" id="sobj-list"></div>
     </div>
+  </div>
 
-    <!-- MP TAB -->
-    <div class="tab-pane" id="pane-mp">
-      <div class="sec-hdr">Session</div>
-      <div class="sec-body">
-        <div class="mp-session-box" style="margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-muted);font-family:monospace;margin-bottom:2px;">ACTIVE SESSION · PUBLIC · MSFS 2024</div>
-          <div class="mp-code">FSF-A7K2</div>
-          <div style="text-align:center;font-size:11px;color:var(--text-muted);">2 players connected</div>
-        </div>
-        <div class="row-2" style="margin-bottom:10px;">
-          <div class="fsf-btn" onclick="toast('Session ended')">End Session</div>
-          <div class="fsf-btn" onclick="toast('Code copied to clipboard')">Copy Code</div>
+  <!-- MP TAB -->
+  <div class="tab-content" id="pane-mp">
+    <div class="scr"><div class="oc">
+      <div class="sh">STATUS</div>
+      <div class="sc"><div class="row"><span style="color:#9ca3af;font-size:11px;">Status</span><span class="mp-stat ok">CONNECTED</span></div></div>
+      <div class="sh">IDENTITY</div>
+      <div class="sc"><label class="lbl2">GamerTag</label><div class="kib filled">TopFighter82</div></div>
+      <div class="sh">SESSION</div>
+      <div class="sc"><div class="btn btn-dng" onclick="toast('Session ended')">Disconnect</div></div>
+      <div class="sc">
+        <div class="row"><span style="color:#9ca3af;font-size:11px;">Session Code</span><span class="mp-code">AFKA7K2M</span></div>
+        <div class="row" style="margin-top:4px;"><span style="color:#9ca3af;font-size:11px;">Chat ID</span><span class="mp-code" style="font-size:14px;letter-spacing:2px;">AF-K7</span></div>
+      </div>
+      <div class="sc">
+        <span style="color:#9ca3af;font-size:11px;">Connected Users</span>
+        <div class="users-list">
+          <div class="urow"><div class="udot"></div><span class="uname">TopFighter82</span><span class="ubadge bhost">HOST</span></div>
+          <div class="urow"><div class="udot" style="background:#3b82f6;"></div><span class="uname">AirWarden_PNW</span><span class="ubadge bguest">GUEST</span></div>
         </div>
       </div>
-      <div class="sec-hdr">Players</div>
-      <div class="sec-body">
-        <div class="mp-player"><div class="mp-avatar">TF</div><span class="mp-pname">TopFighter82</span><span class="mp-host-badge">HOST</span></div>
-        <div class="mp-player"><div class="mp-avatar" style="background:rgba(34,197,94,0.15);color:#86efac;">AW</div><span class="mp-pname">AirWarden_PNW</span><span class="mp-guest-badge">GUEST</span></div>
-      </div>
-      <div class="sec-hdr">Session Chat</div>
-      <div class="sec-body">
-        <div class="chat-area" id="chat-area">
-          <div class="chat-msg"><div class="sender">TopFighter82</div><div class="msg-text">heading to the Yosemite fire now</div></div>
-          <div class="chat-msg"><div class="sender">AirWarden_PNW</div><div class="msg-text">on approach, 2 min out</div></div>
-          <div class="chat-msg"><div class="sender">TopFighter82</div><div class="msg-text">I'll circle left, you come in from the east</div></div>
-        </div>
-        <div class="chat-input-row">
-          <input class="chat-input" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()"/>
-          <button class="chat-send" onclick="sendChat()">Send</button>
+      <div class="acc-item">
+        <div class="acc-hdr" onclick="togAcc(this)"><span class="acc-title" data-key="instr.t7">7. MULTIPLAYER (MP)</span><span class="acc-arr"></span></div>
+        <div class="acc-body" style="display:none;">
+          <p data-key="instr.7a"></p>
+          <p data-key="instr.7b"></p>
+          <p data-key="instr.7c"></p>
         </div>
       </div>
-      <div class="sec-hdr">Session Browser</div>
-      <div class="sec-body">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <div class="qr-box">
-            <svg viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-              <rect width="21" height="21" fill="#fff"/>
-              <rect x="1" y="1" width="7" height="7" fill="#000"/>
-              <rect x="2" y="2" width="5" height="5" fill="#fff"/>
-              <rect x="3" y="3" width="3" height="3" fill="#000"/>
-              <rect x="13" y="1" width="7" height="7" fill="#000"/>
-              <rect x="14" y="2" width="5" height="5" fill="#fff"/>
-              <rect x="15" y="3" width="3" height="3" fill="#000"/>
-              <rect x="1" y="13" width="7" height="7" fill="#000"/>
-              <rect x="2" y="14" width="5" height="5" fill="#fff"/>
-              <rect x="3" y="15" width="3" height="3" fill="#000"/>
-              <rect x="9" y="1" width="1" height="1" fill="#000"/>
-              <rect x="11" y="1" width="1" height="1" fill="#000"/>
-              <rect x="9" y="3" width="3" height="1" fill="#000"/>
-              <rect x="9" y="5" width="1" height="1" fill="#000"/>
-              <rect x="11" y="5" width="1" height="3" fill="#000"/>
-              <rect x="9" y="7" width="1" height="1" fill="#000"/>
-              <rect x="9" y="9" width="5" height="1" fill="#000"/>
-              <rect x="9" y="11" width="1" height="1" fill="#000"/>
-              <rect x="11" y="11" width="3" height="3" fill="#000"/>
-              <rect x="13" y="9" width="1" height="1" fill="#000"/>
-              <rect x="15" y="9" width="5" height="1" fill="#000"/>
-              <rect x="17" y="11" width="3" height="1" fill="#000"/>
-              <rect x="15" y="13" width="1" height="3" fill="#000"/>
-              <rect x="17" y="13" width="3" height="3" fill="#000"/>
-              <rect x="1" y="9" width="3" height="3" fill="#000"/>
-              <rect x="5" y="9" width="3" height="1" fill="#000"/>
-              <rect x="5" y="11" width="1" height="3" fill="#000"/>
-              <rect x="7" y="11" width="1" height="1" fill="#000"/>
-              <rect x="1" y="13" width="1" height="1" fill="#000"/>
-              <rect x="3" y="13" width="1" height="1" fill="#000"/>
-            </svg>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;line-height:1.5;">Scan QR to find active sessions and join from the browser</div>
-            <div class="fsf-btn accent" style="font-size:11px;" onclick="toast('Opening session browser…')">Open Browser</div>
-          </div>
-        </div>
+      <div class="sh">SESSION BROWSER</div>
+      <div class="qrs sc">
+        <div class="qrl">Scan to find active public sessions</div>
+        <div class="qrc"><img src="https://api.qrserver.com/v1/create-qr-code/?size=84x84&format=svg&qzone=1&data=https%3A%2F%2Fsouthoakco.github.io%2Ffsfire-sessions%2F" alt="QR" width="84" height="84"/></div>
+        <div class="qru">southoakco.github.io/fsfire-sessions/</div>
       </div>
-    </div>
+    </div></div>
+  </div>
 
-    <!-- INFO TAB -->
-    <div class="tab-pane" id="pane-info">
-      <div class="sec-hdr">Language</div>
-      <div class="sec-body">
+  <!-- INFO TAB -->
+  <div class="tab-content" id="pane-info">
+    <div class="scr"><div class="oc">
+      <div class="sh" data-i18n-key="info.language">Language</div>
+      <div class="sc">
         <div style="display:flex;gap:5px;margin-bottom:5px;">
-          <div class="fsf-btn active" style="flex:1;font-size:11px;background:var(--red-dim);border-color:var(--red-border);" onclick="selectLang(this,'EN')">English</div>
-          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'IT')">Italiano</div>
-          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'DE')">Deutsch</div>
+          <button class="dsb on" data-lang="en" onclick="setLang(this)">English</button>
+          <button class="dsb" data-lang="it" onclick="setLang(this)">Italiano</button>
+          <button class="dsb" data-lang="de" onclick="setLang(this)">Deutsch</button>
         </div>
         <div style="display:flex;gap:5px;">
-          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'FR')">Français</div>
-          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'ES')">Español</div>
-          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'PT')">Português</div>
+          <button class="dsb" data-lang="fr" onclick="setLang(this)">Francais</button>
+          <button class="dsb" data-lang="es" onclick="setLang(this)">Espanol</button>
+          <button class="dsb" data-lang="pt" onclick="setLang(this)">Portugues</button>
         </div>
       </div>
-      <div class="sec-hdr">Instructions</div>
-      <div class="sec-body">
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <div class="info-section" onclick="toggleInfo(this)">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
-              <span style="color:var(--text);font-size:12px;">Getting Started</span>
-              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
-            </div>
-            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Open the FS Fire panel from the toolbar. Select the Fires tab to load live VIIRS satellite hotspots, or choose a mission from the Missions tab. Head to the Drop tab to configure your aircraft's retardant system.</div>
-          </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
-          <div class="info-section" onclick="toggleInfo(this)">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
-              <span style="color:var(--text);font-size:12px;">Drop System</span>
-              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
-            </div>
-            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Use Drop Now for manual drops, or arm GPS Drop to auto-release over a map-selected target. Physics account for altitude, ground speed, and heading. For helicopters, enable the Bucket mode and scoop water from any lake or river below 25 ft AGL at under 10 kts.</div>
-          </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
-          <div class="info-section" onclick="toggleInfo(this)">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
-              <span style="color:var(--text);font-size:12px;">Multiplayer</span>
-              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
-            </div>
-            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Host a session from the MP tab and share your 8-digit code or QR link. All fires, prop objects, and drop VFX sync in real time across VATSIM, IVAO, and native MSFS multiplayer. Use session chat to coordinate with your crew.</div>
-          </div>
-          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
-          <div class="info-section" onclick="toggleInfo(this)">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
-              <span style="color:var(--text);font-size:12px;">Missions</span>
-              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
-            </div>
-            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Browse 325+ missions on the global map. Each mission tracks your drop efficiency — minimum drops divided by actual drops. Gold requires 80%+, Silver 67%+. Daily Challenges double your score. Missions can be hosted in multiplayer so the whole crew earns credit.</div>
-          </div>
-        </div>
-      </div>
-      <div class="sec-hdr">About</div>
-      <div class="sec-body">
-        <div style="font-size:11px;color:var(--text-muted);line-height:1.7;">FS Fire v2.4 · SoCoSim<br/>MSFS 2020 &amp; MSFS 2024<br/><span style="color:var(--text-dim);">Live data: VIIRS NOAA-20 NRT</span></div>
-      </div>
-    </div>
+      <div class="sh">INSTRUCTIONS</div>
+      <div id="instr-accordion"></div>
+    </div></div>
+  </div>
+</div>
 
-  </div><!-- /content -->
-</div><!-- /device -->
-
-<p class="demo-note">
-  Interactive panel demo — no simulator required.<br/>
-  The real panel runs inside MSFS with live satellite data &amp; SimConnect.
-</p>
-
-<div class="toast" id="toast"></div>
+<p class="demo-note">Interactive panel demo — no simulator required. Live fires loaded from VIIRS NOAA-20 NRT satellite data via the FS Fire cloud backend.</p>
+<div class="toast" id="toast-el"></div>
 
 <script>
-var missions = [
-  {name:'Yosemite Valley Fire',type:'wildfire',loc:'Yosemite NP, California',time:'Daytime',drops:4,best:'100%',medal:'gold',briefing:'A fast-moving crown fire threatening the valley floor. Yosemite Village is at risk. Drop retardant along the fire\'s western flank to establish a containment line before it reaches the campgrounds.'},
-  {name:'Highway Tanker Incident',type:'vehicle',loc:'I-5 Corridor, Oregon',time:'Dusk',drops:2,best:'75%',medal:'silver',briefing:'A fuel tanker has overturned on a grade near a forested stretch of I-5. Road crews are on scene but flames are spreading toward the treeline. Two precision drops will contain the spread.'},
-  {name:'Warehouse Fire — Porto',type:'structure',loc:'Porto Industrial Zone, Portugal',time:'Night',drops:3,best:null,medal:null,briefing:'A large warehouse complex is burning in Porto\'s industrial waterfront. Fire is spreading between structures. Three drops are needed to hit the roof vents and cool the connecting passages.'},
-  {name:'Patagonia Crown Fire',type:'wildfire',loc:'Torres del Paine, Chile',time:'Daytime',drops:6,best:'62%',medal:'bronze',briefing:'A wind-driven crown fire in the Chilean national park. Steep terrain and gusting conditions make this a challenging sortie. Six drops required along the ridge to halt progress toward the park infrastructure.'}
+// ══════════════════════════════════════════════
+// i18n — full string table (EN + IT + DE + FR + ES + PT)
+// ══════════════════════════════════════════════
+var STRINGS = {
+  'info.language':{'en':'Language','it':'Lingua','de':'Sprache','fr':'Langue','es':'Idioma','pt':'Idioma'},
+  'instr.t1':{'en':'1. MAP','it':'1. MAPPA','de':'1. KARTE','fr':'1. CARTE','es':'1. MAPA','pt':'1. MAPA'},
+  'instr.t2':{'en':'2. DROP','it':'2. SGANCIO','de':'2. ABWURF','fr':'2. LARGAGE','es':'2. DESCARGA','pt':'2. LANCAMENTO'},
+  'instr.t3':{'en':'3. MSFS LIQUID DROP SYSTEM','it':'3. SISTEMA SGANCIO LIQUIDO MSFS','de':'3. MSFS FLUSSIGKEITSABWURF','fr':'3. SYSTEME DE LARGAGE LIQUIDE MSFS','es':'3. SISTEMA DE DESCARGA LIQUIDA MSFS','pt':'3. SISTEMA DE LANCAMENTO DE LIQUIDO MSFS'},
+  'instr.t4':{'en':'4. FIRES','it':'4. INCENDI','de':'4. BRANDE','fr':'4. INCENDIES','es':'4. INCENDIOS','pt':'4. INCENDIOS'},
+  'instr.t5':{'en':'5. PROPS','it':'5. OGGETTI','de':'5. OBJEKTE','fr':'5. ACCESSOIRES','es':'5. OBJETOS','pt':'5. OBJETOS'},
+  'instr.t6':{'en':'6. MISSIONS','it':'6. MISSIONI','de':'6. MISSIONEN','fr':'6. MISSIONS','es':'6. MISIONES','pt':'6. MISSOES'},
+  'instr.t7':{'en':'7. MULTIPLAYER (MP)','it':'7. MULTIGIOCATORE (MP)','de':'7. MEHRSPIELER (MP)','fr':'7. MULTIJOUEUR (MP)','es':'7. MULTIJUGADOR (MP)','pt':'7. MULTIJOGADOR (MP)'},
+  'instr.1a':{'en':'a. The moving map displays fires (user spawned, multiplayer, mission, and live fires), prop simobjects, drop markers and more. Hover the cursor over the map controls for additional information.','it':'a. La mappa mobile mostra incendi, oggetti prop, marcatori di sgancio e altro. Passa il cursore sui controlli mappa per ulteriori informazioni.','de':'a. Die Karte zeigt Brande, Prop-Objekte, Abwurfmarkierungen und mehr. Fahren Sie mit der Maus uber die Kartensteuerungen fur weitere Informationen.','fr':'a. La carte affiche les incendies, les accessoires, les marqueurs de largage et plus. Survolez les commandes de la carte pour plus d\'informations.','es':'a. El mapa muestra incendios, objetos prop, marcadores de descarga y mas. Pasa el cursor sobre los controles del mapa para mas informacion.','pt':'a. O mapa movel exibe incendios, objetos prop, marcadores de lancamento e mais. Passe o cursor sobre os controles do mapa para mais informacoes.'},
+  'instr.1b':{'en':'b. Click on a fire, drop, or prop icon in the map area to view/manage that item.','it':'b. Clicca su un\'icona di incendio, sgancio o oggetto nella mappa per visualizzarlo/gestirlo.','de':'b. Klicken Sie auf ein Feuer-, Abwurf- oder Prop-Symbol auf der Karte, um es anzuzeigen/zu verwalten.','fr':'b. Cliquez sur une icone de feu, largage ou accessoire sur la carte pour afficher/gerer cet element.','es':'b. Haz clic en un icono de incendio, descarga u objeto en el mapa para ver/gestionar ese elemento.','pt':'b. Clique em um icone de incendio, lancamento ou objeto no mapa para visualizar/gerenciar esse item.'},
+  'instr.1c':{'en':'c. Click and drag a prop icon on the map to move the prop.','it':'c. Clicca e trascina un\'icona oggetto sulla mappa per spostarlo.','de':'c. Klicken und ziehen Sie ein Prop-Symbol auf der Karte, um es zu verschieben.','fr':'c. Cliquez et faites glisser une icone d\'accessoire sur la carte pour la deplacer.','es':'c. Haz clic y arrastra un icono de objeto en el mapa para moverlo.','pt':'c. Clique e arraste um icone de objeto no mapa para move-lo.'},
+  'instr.2a':{'en':'a. The drop management page allows total control over when to drop, liquid systems, and drop types.','it':'a. La pagina di gestione sgancio permette il controllo completo su quando sgancio, sistemi liquido e tipi di sgancio.','de':'a. Die Abwurfverwaltungsseite ermoglicht volle Kontrolle uber Abwurfzeitpunkt, Flussigkeitssysteme und Abwurftypen.','fr':'a. La page de gestion du largage permet un controle total sur le moment du largage, les systemes de liquide et les types de largage.','es':'a. La pagina de gestion de descargas permite control total sobre cuando descargar, los sistemas de liquido y los tipos de descarga.','pt':'a. A pagina de gerenciamento de lancamento permite controle total sobre quando lancar, sistemas de liquido e tipos de lancamento.'},
+  'instr.2b':{'en':'b. Choose between the MSFS built-in drop system and drop effects via the "MSFS Liquid Drop System" toggle, or use the "FS Fire Drop Effect System" for drop effects that work for any aircraft.','it':'b. Scegli tra il sistema MSFS integrato tramite l\'opzione "Sistema Sgancio Liquido MSFS", o usa il "Sistema Effetti FS Fire" per effetti di sgancio su qualsiasi aeromobile.','de':'b. Wahlen Sie zwischen dem integrierten MSFS-System uber den "MSFS Flussigkeitsabwurf"-Schalter oder verwenden Sie das "FS Fire Abwurfsystem" fur alle Flugzeuge.','fr':'b. Choisissez entre le systeme integre MSFS via la bascule "Systeme de largage liquide MSFS", ou utilisez le "Systeme FS Fire" pour tout aeronef.','es':'b. Elige entre el sistema integrado MSFS mediante el interruptor "Sistema MSFS", o usa el "Sistema FS Fire" para efectos de descarga en cualquier aeronave.','pt':'b. Escolha entre o sistema integrado MSFS pelo botao "Sistema MSFS" ou use o "Sistema FS Fire" para efeitos de lancamento em qualquer aeronave.'},
+  'instr.2c':{'en':'c. Drop options can be customized, including unlimited drops or requiring liquid refill via "Land to Refill" or "Water Scoop to Refill". Use "Water Scoop to Refill" for amphibious aircraft and helicopters with water buckets or hoses.','it':'c. Le opzioni di sgancio sono personalizzabili: sgancci illimitati oppure rifornimento tramite "Atterraggio per rifornire" o "Presa acqua in volo".','de':'c. Abwurfoptionen sind anpassbar: unbegrenzte Abwurfe oder Nachfullen per "Landen zum Nachfullen" oder "Wasserschopfen".','fr':'c. Les options de largage sont personnalisables : largages illimites ou remplissage via "Atterrir pour remplir" ou "Ecoper l\'eau".','es':'c. Las opciones de descarga son personalizables: descargas ilimitadas o recarga mediante "Aterrizar para recargar" o "Escoop de agua".','pt':'c. As opcoes de lancamento sao personalizaveis: lancamentos ilimitados ou recarga via "Pousar para recarregar" ou "Recolher agua".'},
+  'instr.2d':{'en':'d. Drops can be triggered via GPS drop, the "DROP NOW" button, or a programmed keyboard/mouse/controller binding.','it':'d. Gli sgancci possono essere attivati tramite GPS, il pulsante "SGANCIA ORA" o un tasto programmato.','de':'d. Abwurfe konnen per GPS-Abwurf, der "JETZT ABWERFEN"-Schaltflache oder einer programmierten Tastenbindung ausgelost werden.','fr':'d. Les largages peuvent etre declenches via le largage GPS, le bouton "LARGUER MAINTENANT" ou une touche programmee.','es':'d. Las descargas se pueden activar mediante descarga GPS, el boton "DESCARGAR AHORA" o una tecla programada.','pt':'d. Os lancamentos podem ser acionados via lancamento GPS, o botao "LANCAR AGORA" ou uma tecla programada.'},
+  'instr.2e':{'en':'e. The GPS Drop option brings the user to the map to click a drop location. Once the aircraft enters within a 2,000 ft radius of those coordinates, the drop will automatically occur.','it':'e. L\'opzione GPS porta alla mappa per cliccare il punto di sgancio. Quando l\'aeromobile entra nel raggio di 2.000 ft, lo sgancio avviene automaticamente.','de':'e. Die GPS-Abwurfoption fuhrt zur Karte, um einen Abwurfpunkt zu klicken. Wenn das Flugzeug in einen 2.000-ft-Radius eintritt, erfolgt der Abwurf automatisch.','fr':'e. L\'option largage GPS amene a la carte pour cliquer un point. Quand l\'aeronef entre dans un rayon de 2 000 ft, le largage s\'effectue automatiquement.','es':'e. La opcion de descarga GPS lleva al mapa para hacer clic en un punto. Cuando la aeronave entra en un radio de 2.000 ft, la descarga ocurre automaticamente.','pt':'e. A opcao de lancamento GPS leva ao mapa para clicar em um ponto. Quando a aeronave entra em um raio de 2.000 ft, o lancamento ocorre automaticamente.'},
+  'instr.3a':{'en':'a. For MSFS 2024, aircraft such as the 747 Global Super Tanker, Air Tractor AT802, and the Viking CL-415 can be used with their native drop and refill capabilities. In MSFS 2020, the Viking CL-415 can also be used with its native drop system.','it':'a. Per MSFS 2024 si possono usare 747 Global Super Tanker, Air Tractor AT802 e Viking CL-415 con le loro capacita native. In MSFS 2020 anche il Viking CL-415 e supportato.','de':'a. Fur MSFS 2024 konnen 747 Global Super Tanker, Air Tractor AT802 und Viking CL-415 mit ihren nativen Funktionen genutzt werden. In MSFS 2020 ist der Viking CL-415 ebenfalls verfugbar.','fr':'a. Pour MSFS 2024, le 747 Global Super Tanker, l\'Air Tractor AT802 et le Viking CL-415 peuvent etre utilises nativement. Dans MSFS 2020, le Viking CL-415 est egalement supporte.','es':'a. Para MSFS 2024 se pueden usar el 747 Global Super Tanker, Air Tractor AT802 y Viking CL-415 con sus capacidades nativas. En MSFS 2020 el Viking CL-415 tambien esta soportado.','pt':'a. Para MSFS 2024, o 747 Global Super Tanker, Air Tractor AT802 e Viking CL-415 podem ser usados com suas capacidades nativas. No MSFS 2020, o Viking CL-415 tambem e suportado.'},
+  'instr.3b':{'en':'b. 747 Global Super Tanker: Fill tanks via EFB -> Aircraft Icon -> Flight Performance -> Mass and Balance -> Liquid -> Quick Fill -> LOAD IN AIRCRAFT. Tank levels and remote drop controls are in the back of the flight deck.','it':'b. 747 Global Super Tanker: Rifornisci tramite EFB. I livelli serbatoi e i controlli remoti sono nella parte posteriore del cockpit.','de':'b. 747 Global Super Tanker: Tanks uber EFB fullen. Tankfullstande und Fernsteuerungen befinden sich hinten im Cockpit.','fr':'b. 747 Global Super Tanker: Remplir via EFB. Les niveaux de reservoirs et les commandes a distance sont a l\'arriere du cockpit.','es':'b. 747 Global Super Tanker: Llenar via EFB. Los niveles de tanque y los controles de descarga estan en la parte trasera del cockpit.','pt':'b. 747 Global Super Tanker: Encher via EFB. Os niveis dos tanques e os controles remotos estao na parte traseira do cockpit.'},
+  'instr.3c':{'en':'c. Viking CL-415: Fill tanks via EFB, or lower the probes to the down position while moving forward on water. In MSFS 2020 (no EFB): fill using the probe only, then arm the water drop control and click the water drop button on the control yoke.','it':'c. Viking CL-415: Rifornisci tramite EFB, oppure abbassa le sonde sull\'acqua. In MSFS 2020: rifornisci solo con la sonda, poi arma il controllo sgancio.','de':'c. Viking CL-415: Tanks uber EFB fullen oder Sonden absenken auf Wasser. In MSFS 2020: nur Sonden, dann Abwurf armen.','fr':'c. Viking CL-415: Remplir via EFB ou abaisser les sondes sur l\'eau. Dans MSFS 2020: sonde uniquement, puis armer la commande.','es':'c. Viking CL-415: Llenar via EFB o bajar las sondas sobre el agua. En MSFS 2020: solo sonda, luego armar el control.','pt':'c. Viking CL-415: Encher via EFB ou baixar as sondas sobre a agua. No MSFS 2020: apenas sonda, depois armar o controle.'},
+  'instr.3d':{'en':'d. Air Tractor AT802: Fill tanks via EFB. Alternatively, set the fill level, set SCOOPS to auto, and lower the scoops (search SCOOP in control settings) while on water.','it':'d. Air Tractor AT802: Rifornisci come il 747. In alternativa imposta il livello e abbassa le vasche sull\'acqua.','de':'d. Air Tractor AT802: Tanks uber EFB fullen. Alternativ SCOOPS auf Auto und Schaufeln absenken auf Wasser.','fr':'d. Air Tractor AT802: Remplir comme le 747. Alternativement mettre SCOOPS sur auto et abaisser les ecopes sur l\'eau.','es':'d. Air Tractor AT802: Llenar como el 747. Alternativamente pon SCOOPS en auto y baja las palas sobre el agua.','pt':'d. Air Tractor AT802: Encher como o 747. Alternativamente SCOOPS em auto e baixar as pas sobre a agua.'},
+  'instr.4a':{'en':'a. SPAWN LIVE FIRES: Toggles live fire data and spawns live fires within a 10 nautical mile radius. All live fires are displayed on the map. Toggle off to remove live fires. The live fire data source is NOAA-20 VIIRS Near Real-Time (NRT), typically updated within 3 hours of satellite observation. FS Fire server fetches this data every 30 minutes. Fire Radiative Power (FRP) values are used to spawn an appropriately sized fire in MSFS.','it':'a. CREA INCENDI IN DIRETTA: Attiva i dati degli incendi in tempo reale entro 10 miglia nautiche. Disattiva per rimuovere. Fonte: NOAA-20 VIIRS NRT, aggiornato ogni 30 min dal server FS Fire.','de':'a. ECHTZEIT-BRANDE: Schaltet Echtzeit-Branddaten um und spawnt Brande im 10-Seemeilen-Radius. Ausschalten zum Entfernen. Quelle: NOAA-20 VIIRS NRT, alle 30 Min. aktualisiert.','fr':'a. INCENDIES EN DIRECT: Active les donnees d\'incendies en temps reel dans un rayon de 10 nm. Desactiver pour supprimer. Source: NOAA-20 VIIRS NRT, mis a jour toutes les 30 min.','es':'a. INCENDIOS EN VIVO: Activa datos de incendios en tiempo real en un radio de 10 nm. Desactiva para eliminar. Fuente: NOAA-20 VIIRS NRT, actualizado cada 30 min.','pt':'a. INCENDIOS AO VIVO: Ativa dados de incendios em tempo real em um raio de 10 milhas nauticas. Desative para remover. Fonte: NOAA-20 VIIRS NRT, atualizado a cada 30 min.'},
+  'instr.4b':{'en':'b. CUSTOM FIRE: Spawn custom fires (size 1-10) by manually typing coordinates or using the MAP CLICK button. Choose the fire size and spread capability, then click SPAWN CUSTOM FIRE.','it':'b. INCENDIO PERSONALIZZATO: Crea incendi personalizzati (dimensione 1-10) digitando le coordinate o usando il pulsante CLIC MAPPA. Scegli dimensione e propagazione, poi clicca CREA INCENDIO PERSONALIZZATO.','de':'b. EIGENER BRAND: Erstellen Sie benutzerdefinierte Brande (Grosse 1-10) durch manuelle Koordinateneingabe oder Kartenklick. Grosse und Ausbreitung wahlen, dann EIGENEN BRAND SPAWNEN klicken.','fr':'b. INCENDIE PERSONNALISE: Creez des incendies personnalises (taille 1-10) en saisissant des coordonnees ou en cliquant sur la carte. Choisissez la taille et la propagation, puis CREER INCENDIE.','es':'b. INCENDIO PERSONALIZADO: Crea incendios personalizados (tamano 1-10) escribiendo coordenadas o usando CLIC EN MAPA. Elige tamano y propagacion, luego CREAR INCENDIO.','pt':'b. INCENDIO PERSONALIZADO: Crie incendios personalizados (tamanho 1-10) digitando coordenadas ou usando CLIQUE NO MAPA. Escolha tamanho e propagacao, depois CRIAR INCENDIO.'},
+  'instr.4c':{'en':'c. CLEAR ALL USER FIRES: Clears all custom and random fires. Does not remove live fires - toggle off Live Fires to remove those. Individual fires can also be removed via their map icon.','it':'c. CANCELLA TUTTO: Rimuove tutti gli incendi personalizzati e casuali. Non rimuove gli incendi in diretta. I singoli incendi si possono rimuovere tramite la loro icona.','de':'c. ALLE BRANDE LOSCHEN: Loscht alle benutzerdefinierten und zufalligen Brande. Entfernt keine Echtzeitbrande. Einzelne Brande uber ihr Symbol entfernen.','fr':'c. EFFACER INCENDIES: Supprime tous les incendies personnalises et aleatoires. Ne supprime pas les incendies en direct. Les incendies individuels peuvent etre supprimes via leur icone.','es':'c. BORRAR TODOS: Elimina todos los incendios personalizados y aleatorios. No elimina incendios en vivo. Los incendios individuales tambien se pueden eliminar via su icono.','pt':'c. APAGAR TODOS: Remove todos os incendios personalizados e aleatorios. Nao remove incendios ao vivo. Incendios individuais tambem podem ser removidos via seu icone.'},
+  'instr.4d':{'en':'d. RANDOM FIRE SPAWN: Spawns a random size fire at a random location within 10 nautical miles of the user position.','it':'d. INCENDIO CASUALE: Crea un incendio di dimensioni casuali in una posizione casuale entro 10 miglia nautiche.','de':'d. ZUFALLIGER BRAND: Spawnt einen Brand in zufalliger Grosse an einem zufalligen Ort innerhalb von 10 Seemeilen.','fr':'d. INCENDIE ALEATOIRE: Cree un incendie de taille aleatoire a un endroit aleatoire dans un rayon de 10 nm.','es':'d. INCENDIO ALEATORIO: Genera un incendio de tamano aleatorio en una ubicacion aleatoria dentro de 10 nm.','pt':'d. INCENDIO ALEATORIO: Gera um incendio de tamanho aleatorio em um local aleatorio dentro de 10 milhas nauticas.'},
+  'instr.4e':{'en':'e. Extinguishing a fire: Drop water or retardant on a fire. Larger fires require multiple drops. FS Fire uses drop altitude, speed, and heading in a physics-based calculation to determine hit success.','it':'e. Spegnimento: Sgancia acqua o ritardante. Gli incendi piu grandi richiedono piu passaggi. FS Fire usa altitudine, velocita e rotta in un calcolo fisico.','de':'e. Brand loschen: Wasser oder Verzogerer abwerfen. Grossere Brande erfordern mehrere Abwurfe. FS Fire berechnet physikalisch den Abwurferfolg.','fr':'e. Extinction: Larguer de l\'eau ou du retardant. Les grands incendies necessitent plusieurs largages. FS Fire calcule physiquement l\'efficacite.','es':'e. Extinguir: Descarga agua o retardante. Los incendios grandes requieren multiples descargas. FS Fire calcula fisicamente el exito.','pt':'e. Extinguir: Lance agua ou retardante. Incendios maiores requerem multiplos lancamentos. FS Fire calcula fisicamente o sucesso.'},
+  'instr.5a':{'en':'a. Prop objects are simobjects that can be spawned in MSFS to enhance the fire experience. Spawn ships, fire trucks, animals, aircraft, and much more. Use BROWSE to see the default MSFS 2020 and MSFS 2024 simobject lists. For MSFS 2024, the SCAN feature scans the file system for all available simobjects.','it':'a. Gli oggetti prop sono simobject che possono essere creati in MSFS. Crea navi, autopompe, animali, aeromobili e molto altro. Usa SFOGLIA per vedere le liste predefinite.','de':'a. Prop-Objekte sind Simobjects fur MSFS. Spawnen Sie Schiffe, Feuerwehrfahrzeuge, Tiere, Flugzeuge und mehr. DURCHSUCHEN fur Standardlisten.','fr':'a. Les accessoires sont des simobjects pour MSFS. Creez des bateaux, camions, animaux, aeronefs et plus. PARCOURIR pour les listes.','es':'a. Los objetos prop son simobjects para MSFS. Crea barcos, camiones, animales, aeronaves y mas. Usa EXPLORAR para las listas.','pt':'a. Objetos prop sao simobjects para MSFS. Crie navios, caminhoes, animais, aeronaves e mais. Use NAVEGAR para as listas.'},
+  'instr.5b':{'en':'b. Spawning a prop: Click MAP CLICK to select a point on the map, then click SPAWN CUSTOM PROP. Alternatively, enter coordinates directly. Once spawned, a prop can be moved by clicking and dragging its map marker.','it':'b. Creare un prop: Clicca CLIC MAPPA per selezionare un punto, poi CREA PROP. In alternativa, inserisci le coordinate. Una volta creato, puoi spostarlo trascinando la sua icona.','de':'b. Prop spawnen: KARTE KLICKEN, dann PROP SPAWNEN. Alternativ Koordinaten eingeben. Einmal gespawnt per Drag verschieben.','fr':'b. Creer un accessoire: Cliquer CLIC CARTE puis CREER PROP. Alternativement, entrer les coordonnees. Glisser pour deplacer.','es':'b. Crear un objeto: Clic en CLIC EN MAPA luego CREAR PROP. Alternativamente, ingresa coordenadas. Arrastra para mover.','pt':'b. Criar um objeto: Clique em CLIQUE NO MAPA depois CRIAR PROP. Alternativamente, insira coordenadas. Arraste para mover.'},
+  'instr.5c':{'en':'c. Prop removal: Remove a prop via its map marker pop-up (Delete), or remove all props at once via CLEAR ALL PROPS.','it':'c. Rimozione prop: Rimuovi un prop tramite il popup della sua icona (Elimina), o rimuovi tutti tramite CANCELLA TUTTI GLI OGGETTI.','de':'c. Prop entfernen: Prop uber Kartensymbol-Popup entfernen oder alle per ALLE PROPS LOSCHEN.','fr':'c. Suppression: Supprimer un accessoire via son pop-up ou tous via EFFACER TOUS LES ACCESSOIRES.','es':'c. Eliminar objeto: Elimina un prop via su icono en el mapa o todos via BORRAR TODOS LOS OBJETOS.','pt':'c. Remocao de prop: Remova um prop via pop-up do icone ou todos via LIMPAR TODOS OS OBJETOS.'},
+  'instr.5d':{'en':'d. Scene Management: Scenes (props and fires) can be saved and loaded via the SAVE SCENE and LOAD SCENE buttons.','it':'d. Gestione Scena: Le scene possono essere salvate e caricate tramite SALVA SCENA e CARICA SCENA.','de':'d. Szenenverwaltung: Szenen konnen uber SZENE SPEICHERN und SZENE LADEN verwaltet werden.','fr':'d. Gestion de scene: Les scenes peuvent etre sauvegardees et chargees via ENREGISTRER et CHARGER.','es':'d. Gestion de escena: Las escenas se pueden guardar y cargar via GUARDAR ESCENA y CARGAR ESCENA.','pt':'d. Gerenciamento de cena: As cenas podem ser salvas e carregadas via SALVAR CENA e CARREGAR CENA.'},
+  'instr.6a':{'en':'a. Hundreds of missions are available, each with a unique scenario, location, and props. Complete missions offline in single player mode, or with friends through multiplayer. Use the search bar or the map to find a mission. Click a mission\'s map marker to view details and START MISSION.','it':'a. Centinaia di missioni disponibili, ognuna con scenario, posizione e oggetti unici. Completa offline in singolo o con amici in multiplayer. Usa la barra di ricerca o la mappa.','de':'a. Hunderte Missionen verfugbar, jede mit einzigartigem Szenario, Ort und Objekten. Offline oder Mehrspieler. Suchleiste oder Karte verwenden.','fr':'a. Des centaines de missions disponibles, chacune avec un scenario, lieu et accessoires uniques. Solo ou multijoueur. Barre de recherche ou carte.','es':'a. Cientos de misiones disponibles, cada una con escenario, ubicacion y objetos unicos. Solo o multijugador. Barra de busqueda o mapa.','pt':'a. Centenas de missoes disponiveis, cada uma com cenario, localizacao e objetos unicos. Solo ou multiplayer. Barra de pesquisa ou mapa.'},
+  'instr.6b':{'en':'b. Mission scoring: Click the mission information icons (i) to view score explanations.','it':'b. Punteggio: Clicca sulle icone informazioni missione (i) per vedere le spiegazioni.','de':'b. Missionsbewertung: Informationssymbole (i) klicken fur Punkteerklarungen.','fr':'b. Score de mission: Cliquez sur les icones (i) pour les explications.','es':'b. Puntuacion de mision: Haz clic en los iconos (i) para ver las explicaciones.','pt':'b. Pontuacao de missao: Clique nos icones (i) para ver as explicacoes.'},
+  'instr.6c':{'en':'c. Multiplayer missions: Select MULTIPLAYER mission mode, then choose HOST or GUEST. The HOST runs the session; GUEST connects to the host. All players\' drops count toward the mission score.','it':'c. Missioni multiplayer: Seleziona MULTIGIOCATORE, poi scegli HOST o OSPITE. L\'HOST gestisce la sessione; i sgancci di tutti contribuiscono al punteggio.','de':'c. Mehrspieler-Missionen: MEHRSPIELER wahlen, dann HOST oder GAST. HOST fuhrt die Sitzung; alle Abwurfe zahlen.','fr':'c. Missions multijoueur: Selectionner MULTIJOUEUR, puis HOST ou INVITE. Le HOST gere; tous les largages comptent.','es':'c. Misiones multijugador: Selecciona MULTIJUGADOR, luego HOST o INVITADO. El HOST gestiona; las descargas de todos cuentan.','pt':'c. Missoes multiplayer: Selecione MULTIPLAYER, depois HOST ou CONVIDADO. O HOST gerencia; os lancamentos de todos contam.'},
+  'instr.6d':{'en':'d. Mission fires and props cannot be moved or deleted via the map. Additional user-spawned props can be added to enhance the scene.','it':'d. Gli incendi e oggetti della missione non possono essere modificati. Si possono aggiungere oggetti extra.','de':'d. Missionsbrande und -Objekte konnen nicht per Karte modifiziert werden. Zusatzliche Props konnen hinzugefugt werden.','fr':'d. Les incendies et accessoires de mission ne peuvent pas etre modifies. Des accessoires supplementaires peuvent etre ajoutes.','es':'d. Los incendios y objetos de mision no se pueden modificar. Se pueden agregar objetos adicionales.','pt':'d. Incendios e objetos da missao nao podem ser modificados. Objetos adicionais podem ser adicionados.'},
+  'instr.7a':{'en':'a. Multiplayer mode syncs fire spawning/extinguishing, drop effect displays, props, and connected users\' map position icons. Drop effect displays on multiplayer aircraft will be displayed if the aircraft is within 1 nautical mile. FS Fire multiplayer is a second connection - users must FIRST be connected through a server that syncs aircraft (native MSFS multiplayer, VATSIM, IVAO, PilotEdge, etc.).','it':'a. La modalita multiplayer sincronizza creazione/estinzione incendi, effetti sgancio, oggetti e posizioni utenti. Gli effetti di sgancio vengono visualizzati se l\'aeromobile e entro 1 miglio nautico. Il multiplayer FS Fire e una seconda connessione.','de':'a. Der Mehrspielermodus synchronisiert Brand-Spawning/-Loschen, Abwurfeffekte, Props und Benutzerpositionssymbole. Abwurfeffekte innerhalb von 1 Seemeile. FS Fire Mehrspieler ist eine zweite Verbindung.','fr':'a. Le mode multijoueur synchronise les incendies, effets de largage, accessoires et positions. Effets de largage a moins de 1 nm. Le multijoueur FS Fire est une deuxieme connexion.','es':'a. El modo multijugador sincroniza incendios, efectos de descarga, objetos y posiciones. Efectos dentro de 1 nm. El multijugador FS Fire es una segunda conexion.','pt':'a. O modo multiplayer sincroniza incendios, efeitos de lancamento, objetos e posicoes. Efeitos dentro de 1 nm. O multiplayer FS Fire e uma segunda conexao.'},
+  'instr.7b':{'en':'b. HOST SESSION: Host a session. Public mode lists the session publicly so anyone can connect via the session ID. Private sessions require knowing the ID. The host controls all fires and props. If the host disconnects, the next user automatically becomes host.','it':'b. CREA SESSIONE: Pubblica: visibile a tutti. Privata: richiede l\'ID. L\'host controlla incendi e oggetti. Se l\'host si disconnette, il prossimo diventa host.','de':'b. SITZUNG ERSTELLEN: Offentlich: fur alle sichtbar. Privat: ID erforderlich. Host kontrolliert Props. Wenn Host trennt, wird nachster Benutzer Host.','fr':'b. HEBERGER SESSION: Publique: visible par tous. Privee: ID requis. L\'hote controle tout. Si l\'hote se deconnecte, le suivant devient hote.','es':'b. CREAR SESION: Publica: visible para todos. Privada: requiere ID. El host controla todo. Si el host se desconecta, el siguiente se convierte en host.','pt':'b. CRIAR SESSAO: Publica: visivel para todos. Privada: requer ID. O host controla tudo. Se o host desconectar, o proximo torna-se host.'},
+  'instr.7c':{'en':'c. JOIN SESSION: Connect to a session using the 8-digit session ID. Public sessions can be found via the QR code on the Multiplayer page. Guests can extinguish fires but cannot spawn fires or props.','it':'c. UNISCITI SESSIONE: Connettiti con l\'ID di 8 cifre. Le sessioni pubbliche si trovano tramite il codice QR. Gli ospiti possono spegnere incendi ma non crearne.','de':'c. SITZUNG BEITRETEN: Mit 8-stelliger ID verbinden. Offentliche Sitzungen per QR-Code finden. Gaste konnen Brande loschen aber nicht spawnen.','fr':'c. REJOINDRE SESSION: Se connecter avec l\'ID a 8 chiffres. Sessions publiques via le QR code. Les invites peuvent eteindre mais pas creer.','es':'c. UNIRSE A SESION: Conectate con el ID de 8 digitos. Sesiones publicas via el codigo QR. Los invitados pueden extinguir pero no crear.','pt':'c. ENTRAR NA SESSAO: Conecte-se com o ID de 8 digitos. Sessoes publicas via codigo QR. Os convidados podem extinguir mas nao criar.'}
+};
+var SECTIONS = [
+  {title:'instr.t1', keys:['instr.1a','instr.1b','instr.1c']},
+  {title:'instr.t2', keys:['instr.2a','instr.2b','instr.2c','instr.2d','instr.2e']},
+  {title:'instr.t3', keys:['instr.3a','instr.3b','instr.3c','instr.3d']},
+  {title:'instr.t4', keys:['instr.4a','instr.4b','instr.4c','instr.4d','instr.4e']},
+  {title:'instr.t5', keys:['instr.5a','instr.5b','instr.5c','instr.5d']},
+  {title:'instr.t6', keys:['instr.6a','instr.6b','instr.6c','instr.6d']},
+  {title:'instr.t7', keys:['instr.7a','instr.7b','instr.7c']}
 ];
-var selectedMission = -1;
-
-function tab(id) {
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
-  document.querySelector('[data-tab="'+id+'"]').classList.add('active');
-  document.getElementById('pane-'+id).classList.add('active');
+var currentLang = 'en';
+function T(key){ var e=STRINGS[key]; return e?(e[currentLang]||e['en']||key):key; }
+function setLang(el){
+  el.closest('.sc').querySelectorAll('.dsb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  currentLang = el.getAttribute('data-lang');
+  applyLang();
+  toast('Language: <b>'+el.textContent+'</b>');
+}
+function applyLang(){
+  // Update accordion
+  buildInstrAccordion();
+  // Update MP accordion items with data-key
+  document.querySelectorAll('[data-key]').forEach(function(el){
+    el.innerHTML = T(el.getAttribute('data-key'));
+  });
+  document.querySelectorAll('[data-i18n-key]').forEach(function(el){
+    el.textContent = T(el.getAttribute('data-i18n-key'));
+  });
+}
+function buildInstrAccordion(){
+  var acc = document.getElementById('instr-accordion');
+  acc.innerHTML = '';
+  SECTIONS.forEach(function(s){
+    var item = document.createElement('div');
+    item.className = 'acc-item';
+    var hdr = document.createElement('div');
+    hdr.className = 'acc-hdr';
+    hdr.innerHTML = '<span class="acc-title">'+T(s.title)+'</span><span class="acc-arr"></span>';
+    hdr.onclick = function(){togAcc(this);};
+    var body = document.createElement('div');
+    body.className = 'acc-body';
+    body.style.display = 'none';
+    s.keys.forEach(function(k){
+      var p = document.createElement('p');
+      p.innerHTML = T(k);
+      body.appendChild(p);
+    });
+    item.appendChild(hdr);
+    item.appendChild(body);
+    acc.appendChild(item);
+  });
+}
+function togAcc(hdr){
+  var body = hdr.nextElementSibling;
+  var open = body.style.display !== 'none';
+  body.style.display = open?'none':'block';
+  hdr.classList.toggle('open',!open);
 }
 
-document.querySelectorAll('.tab').forEach(function(t){
-  t.addEventListener('click',function(){tab(t.getAttribute('data-tab'));});
+// ══════════════════════════════════════════════
+// LEAFLET MAP
+// ══════════════════════════════════════════════
+var map, tileLayer, aircraftMarker;
+var liveFireMarkers = [], userFireMarkers = [], dropMarkers = [], propMarkers = [];
+var liveFiresOn = true, followMode = true, northUp = true;
+var declState = 0;
+var mapCenter = [37.8124, -122.4142];
+
+// Tile layers
+var tileLayers = {
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:''}),
+  street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:''}),
+  terrain: L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',{attribution:''}),
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:''})
+};
+var layerOrder = ['dark','satellite','street','terrain'];
+var layerIdx = 0;
+
+function initMap(){
+  map = L.map('leaflet-map',{zoomControl:false,attributionControl:false,center:mapCenter,zoom:9});
+  tileLayers[layerOrder[0]].addTo(map);
+
+  // Aircraft marker (SVG plane icon)
+  var acIcon = L.divIcon({className:'',html:'<svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2L5 20l7-3.5L19 20Z" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1" stroke-linejoin="round"/></svg>',iconSize:[22,22],iconAnchor:[11,11]});
+  aircraftMarker = L.marker(mapCenter,{icon:acIcon,zIndexOffset:1000}).addTo(map);
+
+  // Coords bar update
+  map.on('mousemove',function(e){
+    document.getElementById('coords-bar').textContent = e.latlng.lat.toFixed(4)+(e.latlng.lat>=0?' N':' S')+' · '+Math.abs(e.latlng.lng).toFixed(4)+(e.latlng.lng>=0?' E':' W');
+  });
+
+  fetchLiveFires();
+}
+
+// ── Live fire fetch ──
+function fetchLiveFires(){
+  var el = document.getElementById('live-status');
+  el.textContent = 'Fetching satellite data...';
+  fetch('https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer/hotspots/public')
+    .then(function(r){return r.json();})
+    .catch(function(){return null;})
+    .then(function(data){
+      if(!data || !data.hotspots){
+        // Fallback: show some sample fires near map center
+        placeSampleFires();
+        el.textContent = 'Using cached satellite data';
+        return;
+      }
+      var hs = data.hotspots;
+      hs.forEach(function(h){placeLiveFire(h.latitude,h.longitude,h.frp||50,h.size||3);});
+      el.textContent = hs.length+' live fires loaded · NOAA-20 VIIRS NRT';
+      updateFireCount();
+    });
+}
+function placeSampleFires(){
+  var samples=[
+    {lat:38.2,lon:-119.8,frp:210,size:7},{lat:37.2,lon:-121.5,frp:88,size:5},
+    {lat:36.8,lon:-119.1,frp:45,size:3},{lat:38.9,lon:-120.4,frp:320,size:9},
+    {lat:37.6,lon:-122.0,frp:15,size:2},{lat:39.1,lon:-121.7,frp:155,size:6}
+  ];
+  samples.forEach(function(s){placeLiveFire(s.lat,s.lon,s.frp,s.size);});
+  document.getElementById('live-status').textContent = '6 fires in range · NOAA-20 VIIRS NRT (cached)';
+  updateFireCount();
+}
+function fireColor(size){return size>=7?'#f41216':size>=4?'#f97316':'#fb923c';}
+function fireRadius(size){return 2+size*0.8;}
+function placeLiveFire(lat,lon,frp,size){
+  if(!liveFiresOn)return;
+  var color = fireColor(size);
+  var r = fireRadius(size);
+  var c = L.circleMarker([lat,lon],{radius:r,color:color,fillColor:color,fillOpacity:.8,weight:1.5});
+  c.bindPopup('<div style="background:#161b22;color:#e5e7eb;padding:8px 12px;border-radius:6px;font-size:11px;min-width:110px;"><div style="color:#f41216;font-weight:700;font-size:9px;letter-spacing:1px;margin-bottom:4px;">LIVE FIRE</div><div>Size: <b>'+size+'</b></div><div>FRP: <b>'+(frp?Math.round(frp)+' MW':'—')+'</b></div><div style="margin-top:6px;"><span onclick="this.closest(\'.leaflet-popup\').querySelector(\'.leaflet-popup-close-button\').click();toast(\'Fire removed\')" style="cursor:pointer;color:#ef4444;font-size:10px;">✕ Remove</span></div></div>',{className:'dark-popup'});
+  c.addTo(map);
+  liveFireMarkers.push(c);
+}
+function toggleLive(){
+  var tgl = document.getElementById('live-tgl');
+  liveFiresOn = !liveFiresOn;
+  tgl.classList.toggle('on', liveFiresOn);
+  if(liveFiresOn){
+    if(liveFireMarkers.length===0){fetchLiveFires();}
+    else{liveFireMarkers.forEach(function(m){m.addTo(map);});}
+    toast('Live fires enabled');
+  } else {
+    liveFireMarkers.forEach(function(m){map.removeLayer(m);});
+    toast('Live fires disabled');
+  }
+  updateFireCount();
+}
+function updateFireCount(){
+  var total = (liveFiresOn?liveFireMarkers.length:0)+userFireMarkers.length;
+  document.getElementById('fire-count-pill').textContent = '\uD83D\uDD25 '+total+' fires';
+}
+
+// ── Map controls ──
+function centerMap(){map.setView(mapCenter,map.getZoom(),{animate:true});}
+function panMap(dx,dy){map.panBy([dx,dy],{animate:true});}
+function cycleLayer(){
+  map.removeLayer(tileLayers[layerOrder[layerIdx]]);
+  layerIdx = (layerIdx+1)%layerOrder.length;
+  tileLayers[layerOrder[layerIdx]].addTo(map);
+  toast('Map layer: <b>'+layerOrder[layerIdx]+'</b>');
+}
+function toggleFollow(){
+  followMode = !followMode;
+  var b=document.getElementById('follow-btn');
+  var c=document.getElementById('cr-follow');
+  b.classList.toggle('on',followMode);
+  c.classList.toggle('on',followMode);
+  toast('Follow aircraft: '+(followMode?'ON':'OFF'));
+}
+function toggleNorthUp(){
+  northUp = !northUp;
+  var b=document.getElementById('northup-btn');
+  var c=document.getElementById('cr-north');
+  b.classList.toggle('on',northUp);
+  c.classList.toggle('on',northUp);
+  toast('North-up: '+(northUp?'ON':'OFF'));
+}
+var declLabels=['All markers','Fires only','None'];
+function cycleDeclutter(){
+  declState=(declState+1)%3;
+  var b=document.getElementById('declutter-btn');
+  var c=document.getElementById('cr-decl');
+  b.classList.toggle('on',declState>0);
+  c.classList.toggle('on',declState>0);
+  // Show/hide markers
+  var showFires = declState<2;
+  var showProps = declState===0;
+  liveFireMarkers.concat(userFireMarkers).forEach(function(m){showFires?m.addTo(map):map.removeLayer(m);});
+  propMarkers.forEach(function(m){showProps?m.addTo(map):map.removeLayer(m);});
+  toast('Declutter: <b>'+declLabels[declState]+'</b>');
+}
+function clearDrops(){dropMarkers.forEach(function(m){map.removeLayer(m);});dropMarkers=[];toast('Drop markers cleared');}
+
+// ── Map-click mode (for fire lat/lon and prop lat/lon and GPS drop) ──
+var mapClickTarget = null;
+var mapClickPrevTab = null;
+function startMapClick(latId, lonId, type){
+  mapClickTarget = {latId:latId, lonId:lonId, type:type};
+  // Remember which tab we came from
+  var activeTab = document.querySelector('.tab-button.tab-active');
+  mapClickPrevTab = activeTab ? activeTab.getAttribute('data-tab') : null;
+  var overlay = document.getElementById('map-overlay');
+  var banner = document.getElementById('map-banner');
+  overlay.style.display = 'block';
+  banner.style.display = 'block';
+  if(type==='gps') banner.textContent = 'Click map to set GPS drop target';
+  else if(type==='fire') banner.textContent = 'Click map to place fire';
+  else banner.textContent = 'Click map to place prop';
+  // Switch to map tab
+  switchTab('map');
+  // Highlight coord fields
+  var lf = document.getElementById(latId);
+  var lf2 = document.getElementById(lonId);
+  if(lf){lf.classList.add('picking');}
+  if(lf2){lf2.classList.add('picking');}
+  overlay.onclick = function(e){
+    var rect = document.getElementById('leaflet-map').getBoundingClientRect();
+    var latlng = map.containerPointToLatLng(L.point(e.clientX-rect.left, e.clientY-rect.top));
+    finishMapClick(latlng.lat, latlng.lng);
+  };
+}
+function finishMapClick(lat,lon){
+  var overlay = document.getElementById('map-overlay');
+  var banner = document.getElementById('map-banner');
+  overlay.style.display = 'none';
+  banner.style.display = 'none';
+  if(!mapClickTarget)return;
+  var latStr = Math.abs(lat).toFixed(4)+(lat>=0?' N':' S');
+  var lonStr = Math.abs(lon).toFixed(4)+(lon>=0?' E':' W');
+  var lf = document.getElementById(mapClickTarget.latId);
+  var lf2 = document.getElementById(mapClickTarget.lonId);
+  var clickType = mapClickTarget.type;
+  if(lf){lf.textContent=latStr;lf.classList.remove('picking');lf.classList.add('filled');}
+  if(lf2){lf2.textContent=lonStr;lf2.classList.remove('picking');lf2.classList.add('filled');}
+  var prevTab = mapClickPrevTab;
+  mapClickTarget = null;
+  mapClickPrevTab = null;
+  if(clickType==='gps'){
+    document.getElementById('gps-coord-txt').textContent = latStr+' · '+lonStr;
+    document.getElementById('gps-box').style.display='block';
+    toast('GPS target set: '+latStr);
+    switchTab(prevTab||'drop');
+  } else if(clickType==='fire'){
+    var pin = L.circleMarker([lat,lon],{radius:5,color:'#22c55e',fillColor:'#22c55e',fillOpacity:.5,weight:2,dashArray:'4'}).addTo(map);
+    setTimeout(function(){map.removeLayer(pin);},3000);
+    toast('Fire coordinates set');
+    var sb = document.getElementById('spawn-fire-btn');
+    if(sb){sb.classList.add('spawn-glow');}
+    switchTab(prevTab||'fires');
+  } else {
+    var pin2 = L.circleMarker([lat,lon],{radius:5,color:'#a855f7',fillColor:'#a855f7',fillOpacity:.5,weight:2,dashArray:'4'}).addTo(map);
+    setTimeout(function(){map.removeLayer(pin2);},3000);
+    toast('Prop coordinates set');
+    var pb = document.getElementById('spawn-prop-btn');
+    if(pb){pb.classList.add('spawn-glow');}
+    switchTab(prevTab||'props');
+  }
+}
+
+// ── GPS Drop ──
+var gpsArmed = false;
+function toggleGPS(){
+  gpsArmed = !gpsArmed;
+  var arm=document.getElementById('gps-arm');var dis=document.getElementById('gps-dis');
+  if(gpsArmed){
+    arm.style.display='none';dis.style.display='flex';
+    arm.classList.add('armed');
+    startMapClick('_gpslat','_gpslon','gps');
+  } else {
+    arm.style.display='flex';dis.style.display='none';
+    arm.classList.remove('armed');
+    toast('GPS Drop disarmed');
+  }
+}
+
+// ── Drop Now ──
+function doDrop(){
+  var btn=document.getElementById('drop-now-btn');
+  var center=map.getCenter();
+  var dropIcon=L.divIcon({className:'',html:'<div style="width:16px;height:16px;border-radius:50%;background:rgba(59,130,246,.3);border:2px solid #3b82f6;display:flex;align-items:center;justify-content:center;"><div style="width:5px;height:5px;border-radius:50%;background:#3b82f6;"></div></div>',iconSize:[16,16],iconAnchor:[8,8]});
+  var dm = L.marker([center.lat,center.lng],{icon:dropIcon}).addTo(map);
+  dropMarkers.push(dm);
+  btn.style.background='rgba(239,68,68,.45)';btn.style.borderColor='rgba(239,68,68,.9)';
+  toast('<b>DROPPING</b> — retardant released');
+  setTimeout(function(){btn.style.background='';btn.style.borderColor='';},500);
+}
+
+// ── Fire spawning ──
+var sliderVal=5;
+function startSlider(e,el){
+  e.preventDefault();
+  var slider=document.getElementById('fslider');
+  function move(ev){
+    var x=ev.touches?ev.touches[0].clientX:ev.clientX;
+    var rect=slider.getBoundingClientRect();
+    var pct=Math.max(0,Math.min(1,(x-rect.left)/rect.width));
+    sliderVal=Math.round(pct*9)+1;
+    document.getElementById('fthumb').style.left=(pct*100)+'%';
+    document.getElementById('fsize-lbl').textContent='Size: '+sliderVal;
+  }
+  function up(){document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up);}
+  document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);move(e);
+}
+function spawnFire(){
+  var sb=document.getElementById('spawn-fire-btn');if(sb)sb.classList.remove('spawn-glow');
+  var latEl=document.getElementById('fire-lat');var lonEl=document.getElementById('fire-lon');
+  var latTxt=latEl.textContent.trim();var lonTxt=lonEl.textContent.trim();
+  var lat=parseFloat(latTxt)||mapCenter[0];var lon=parseFloat(lonTxt)||mapCenter[1];
+  if(latTxt.indexOf('S')>-1)lat=-lat;if(lonTxt.indexOf('W')>-1)lon=-lon;
+  var color=fireColor(sliderVal);var r=fireRadius(sliderVal);
+  var c=L.circleMarker([lat,lon],{radius:r,color:color,fillColor:color,fillOpacity:.85,weight:2});
+  c.bindPopup('<div style="background:#161b22;color:#e5e7eb;padding:8px 12px;border-radius:6px;font-size:11px;"><div style="color:#f41216;font-weight:700;font-size:9px;letter-spacing:1px;margin-bottom:4px;">CUSTOM FIRE · SIZE '+sliderVal+'</div><span onclick="removeUserFire(this)" style="cursor:pointer;color:#ef4444;font-size:10px;">✕ Remove</span></div>',{className:'dark-popup'});
+  c._userFire=true;c.addTo(map);userFireMarkers.push(c);
+  updateFireCount();
+  toast('Fire spawned — Size '+sliderVal);
+  map.setView([lat,lon],map.getZoom(),{animate:true});
+}
+function removeUserFire(el){
+  el.closest('.leaflet-popup')&&map.closePopup();
+}
+function clearUserFires(){
+  userFireMarkers.forEach(function(m){map.removeLayer(m);});userFireMarkers=[];
+  updateFireCount();toast('All user fires cleared');
+}
+function spawnRandomFire(){
+  var c=map.getCenter();
+  var lat=c.lat+(Math.random()-.5)*.15;var lon=c.lng+(Math.random()-.5)*.15;
+  var size=Math.floor(Math.random()*9)+1;
+  var color=fireColor(size);var r=fireRadius(size);
+  var mk=L.circleMarker([lat,lon],{radius:r,color:color,fillColor:color,fillOpacity:.85,weight:2});
+  mk.addTo(map);userFireMarkers.push(mk);updateFireCount();
+  toast('Random fire spawned — Size '+size);
+}
+
+// ── Prop spawning ──
+function spawnProp(){
+  var pb=document.getElementById('spawn-prop-btn');if(pb)pb.classList.remove('spawn-glow');
+  var name=document.getElementById('prop-disp').textContent;
+  var latEl=document.getElementById('prop-lat');var lonEl=document.getElementById('prop-lon');
+  var lat=parseFloat(latEl.textContent)||mapCenter[0];var lon=parseFloat(lonEl.textContent)||mapCenter[1];
+  var pIcon=L.divIcon({className:'',html:'<svg width="14" height="14" viewBox="0 0 24 24" fill="#a855f7"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',iconSize:[14,14],iconAnchor:[7,7]});
+  var m=L.marker([lat,lon],{icon:pIcon,draggable:true}).addTo(map);
+  m.bindPopup('<div style="background:#161b22;color:#e5e7eb;padding:8px 12px;border-radius:6px;font-size:11px;"><div style="color:#a855f7;font-weight:700;font-size:9px;letter-spacing:1px;margin-bottom:4px;">PROP</div><div style="word-break:break-all;">'+name+'</div></div>',{className:'dark-popup'});
+  propMarkers.push(m);
+  toast('Spawned: '+name);
+}
+
+// ── Drop sys selectors ──
+function selDropSys(el){document.getElementById('sys-fs').classList.remove('on');document.getElementById('sys-ms').classList.remove('on');el.classList.add('on');toast('Drop system: '+el.textContent.trim());}
+function selTank(el,t){
+  document.getElementById('tank-u').classList.remove('on');document.getElementById('tank-r').classList.remove('on');el.classList.add('on');
+  var rr=document.getElementById('refill-row');var tb=document.getElementById('tank-bar-wrap');
+  if(t==='r'){rr.style.display='flex';tb.style.display='block';toast('Tank: Require Liquid Refill');}
+  else{rr.style.display='none';tb.style.display='none';toast('Tank: Unlimited Drops');}
+}
+function selHeli(el,t){
+  document.getElementById('heli-f').classList.remove('on');document.getElementById('heli-b').classList.remove('on');el.classList.add('on');
+  document.getElementById('bucket-row').style.display=(t==='b')?'flex':'none';
+  toast('Helicopter: '+el.textContent);
+}
+function sel2(el){el.parentNode.querySelectorAll('.sel2-b').forEach(function(b){b.classList.remove('on');});el.classList.add('on');toast(el.textContent);}
+function sel2btn(el){el.parentNode.querySelectorAll('.dsb').forEach(function(b){b.classList.remove('on');});el.classList.add('on');toast(el.textContent);}
+function togEl(el,a,b){var on=!el.classList.contains('on');el.classList.toggle('on',on);toast(on?a:b);}
+
+// ── Simobject browser ──
+var simData={
+  '2020':{Airplanes:['Bell 407','Cessna 172SP','Boeing 747-8i','Douglas DC-3'],Groundvehicles:['ASO_Firetruck01','ASO_Firetruck02','ASO_Ambulance_Japan'],Animals:['GrizzlyBear','HumpbackWhale','BlackBear','Flamingo'],Humans:['Pilot_Male_Casual','Pilot_Female_Military','Marshaller_Male_Summer_Caucasian'],Boats:['FishingBoat','Yacht01','CruiseShip01'],Landmarks:['Windsock','Windmill','ASO_Jetway'],Misc:['Parachute','Flag_US','Optical_Landing_System']},
+  '2024':{Airplanes:['CL415 Firefighting','AT802 Firefighting','S-64F Skycrane Firefighting Configuration','BELL UH-1H Iroquois Rescue Hoist'],Groundvehicles:['Microsoft_Truck_Fire_Long','Microsoft_Truck_Fire_Medium_Red','Microsoft_Aerial_Tank','Microsoft_Bulldozer'],Animals:['PLeoLeoMale','UThibetanusMale','ECaballusMale','GGiraffaMale'],Humans:['Pilot_SR_Rescue','Pilot_SR_Cropdusting','Copilot_Glider_Passive'],Boats:['Microsoft_Ships_RescueAiskoSar_1','Microsoft_Ships_Northwestern_1','FishingBoat'],Landmarks:['VO_Fire_R1_100','VO_Smoke_R1_100_Black','Windsock'],Misc:['FireRetardant','Firefight_Pipe','OilDispersant','LifeRaft']}
+};
+var catColors={Airplanes:'#1976D2',Groundvehicles:'#f97316',Animals:'#22c55e',Humans:'#a855f7',Boats:'#3b82f6',Landmarks:'#9ca3af',Misc:'#6b7280'};
+var curSrc='2020';
+function openSobj(){document.getElementById('sobj-panel').classList.add('open');loadSrc(document.getElementById('src-2020'),'2020');}
+function closeSobj(){document.getElementById('sobj-panel').classList.remove('open');}
+function loadSrc(el,ver){
+  document.getElementById('src-2020').classList.remove('on');document.getElementById('src-2024').classList.remove('on');el.classList.add('on');curSrc=ver;
+  var g=document.getElementById('cat-grid');g.innerHTML='';
+  Object.keys(simData[ver]).forEach(function(cat){var b=document.createElement('div');b.className='cat-btn';b.textContent=cat;b.style.background=(catColors[cat]||'#555')+'22';b.style.borderColor=(catColors[cat]||'#555')+'66';b.style.color=catColors[cat]||'#e5e7eb';b.onclick=function(){loadCat(cat);};g.appendChild(b);});
+  document.getElementById('sobj-list').innerHTML='';
+}
+function loadCat(cat){var list=document.getElementById('sobj-list');list.innerHTML='';(simData[curSrc][cat]||[]).forEach(function(name){var d=document.createElement('div');d.className='sobj-item';d.textContent=name;d.onclick=function(){document.getElementById('prop-disp').textContent=name;closeSobj();toast('Selected: '+name);};list.appendChild(d);});}
+
+// ── Missions ──
+var missionData=[
+  {name:'Yosemite Valley Fire',type:'Wildfire',loc:'Yosemite NP, California',time:'Daytime',drops:4,eff:95,medal:'g',brief:'A fast-moving crown fire threatening the valley floor. Drop retardant along the western flank to establish a containment line before it reaches the campgrounds.'},
+  {name:'Highway Tanker Incident',type:'Vehicle',loc:'I-5 Corridor, Oregon',time:'Dusk',drops:2,eff:72,medal:'s',brief:'A fuel tanker overturned near a forested stretch of I-5. Two precision drops contain the spread before it reaches the treeline.'},
+  {name:'Warehouse Fire — Porto',type:'Structure',loc:'Porto Industrial Zone, Portugal',time:'Night',drops:3,eff:0,medal:null,brief:'A large warehouse complex is burning. Three drops needed to hit the roof vents and cool the connecting passages.'},
+  {name:'Patagonia Crown Fire',type:'Wildfire',loc:'Torres del Paine, Chile',time:'Daytime',drops:6,eff:62,medal:'b',brief:'Wind-driven crown fire. Six drops required along the ridge to halt progress toward park infrastructure.'}
+];
+function showBrief(idx){
+  var m=missionData[idx];var bp=document.getElementById('brief-panel');var bc=document.getElementById('brief-content');var ef=document.getElementById('eff-fill');
+  bc.innerHTML='<strong>'+m.name+'</strong><br/><span style="color:#6b7280;font-size:9px;">'+m.type+' · '+m.loc+' · '+m.time+'</span><br/><br/>'+m.brief+'<br/><br/><span style="color:#6b7280;">Min drops: <b style="color:#e5e7eb;">'+m.drops+'</b></span>'+(m.medal?' &nbsp;|&nbsp; Best: <span class="med '+m.medal+'">'+(m.medal==='g'?'🥇 '+m.eff+'%':m.medal==='s'?'🥈 '+m.eff+'%':'🥉 '+m.eff+'%')+'</span>':'');
+  ef.style.width=m.eff+'%';ef.style.background=m.eff>=80?'#fbbf24':m.eff>=67?'#9ca3af':m.eff>0?'#cd7f32':'transparent';
+  bp.style.display='block';bp.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function selMode(el,mode){document.getElementById('mode-sp').classList.remove('on');document.getElementById('mode-mp').classList.remove('on');el.classList.add('on');toast('Mode: '+(mode==='sp'?'Single Player':'Multiplayer'));}
+function setFilt(el){document.querySelectorAll('.mfb').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
+
+// ── Tabs ──
+function switchTab(id){
+  document.querySelectorAll('.tab-button').forEach(function(t){t.classList.remove('tab-active');});
+  document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('[data-tab="'+id+'"]').classList.add('tab-active');
+  document.getElementById('pane-'+id).classList.add('active');
+  if(id==='map')setTimeout(function(){map&&map.invalidateSize();},50);
+}
+document.querySelectorAll('.tab-button').forEach(function(tb){
+  tb.addEventListener('click',function(){switchTab(tb.getAttribute('data-tab'));});
 });
 
-function toast(msg) {
-  var el = document.getElementById('toast');
-  el.innerHTML = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(function(){el.classList.remove('show');},2200);
-}
+// ── Toast ──
+function toast(msg){var el=document.getElementById('toast-el');el.innerHTML=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show');},2400);}
 
-function selectDrop(el,type){
-  el.parentNode.querySelectorAll('.sel-btn').forEach(function(b){b.classList.remove('active');});
-  el.classList.add('active');
-  toast('Drop type: <b>'+type+'</b>');
-}
-function selectTank(el,type){
-  el.parentNode.querySelectorAll('.fsf-btn').forEach(function(b){b.classList.remove('active');});
-  el.classList.add('active');
-  toast('Tank mode: <b>'+type+'</b>');
-}
-function selectHeli(el,type){
-  el.parentNode.querySelectorAll('.sel-btn').forEach(function(b){b.classList.remove('active');});
-  el.classList.add('active');
-  toast('Helicopter mode: <b>'+type+'</b>');
-}
-function toggleGPS(el){
-  el.classList.toggle('on');
-  var on = el.classList.contains('on');
-  document.getElementById('gps-coords').style.display = on ? 'block' : 'none';
-  toast(on ? 'GPS Drop armed · click map to set target' : 'GPS Drop disarmed');
-}
-var dropped = false;
-function doDrop(){
-  var btn = document.getElementById('drop-btn');
-  btn.classList.add('armed');
-  toast('<b>DROPPING</b> — retardant released');
-  document.getElementById('drop-mark').style.display='block';
-  setTimeout(function(){btn.classList.remove('armed');},600);
-  dropped = true;
-}
-function updateFireSize(v){document.getElementById('fire-size-display').textContent='Size: '+v;}
-function spawnFire(){toast('Fire spawned — Size '+document.getElementById('fire-size-slider').value);}
-function spawnProp(){toast('Prop spawned: '+document.getElementById('prop-current').textContent);}
-function toggleNorthUp(el){el.style.color=el.style.color?'':'var(--red)';toast(el.style.color?'North-up enabled':'Track-up enabled');}
+// ── Status bar animation ──
+var statuses=[{dot:'#22c55e',text:'WASM CONNECTED · MSFS 2024'},{dot:'#3b82f6',text:'MULTIPLAYER · 2 USERS CONNECTED'},{dot:'#22c55e',text:'MISSION ACTIVE · Yosemite Valley Fire'}];
+var sIdx=0;
+setInterval(function(){sIdx=(sIdx+1)%statuses.length;var s=statuses[sIdx];document.getElementById('cndot').style.background=s.dot;document.getElementById('cntxt').style.color=s.dot;document.getElementById('cntxt').textContent=s.text;},5000);
 
-var declutterState=0;var declutterLabels=['All markers','Fires only','None'];
-function cycleDeclutter(el){declutterState=(declutterState+1)%3;toast('Map: <b>'+declutterLabels[declutterState]+'</b>');}
-
-function setFilter(el,type){
-  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
-  el.classList.add('active');
-}
-
-function selectMission(idx){
-  selectedMission=idx;
-  document.querySelectorAll('.mission-card').forEach(function(c){c.classList.remove('selected');});
-  document.getElementById('mc'+idx).classList.add('selected');
-  var m=missions[idx];
-  document.getElementById('briefing-content').innerHTML='<b style="color:var(--text);">'+m.name+'</b><br/><span style="color:var(--text-muted);font-size:10px;">'+m.loc+' · '+m.time+'</span><br/><br/>'+m.briefing+'<br/><br/><span style="color:var(--text-muted);">Min drops required: <b style="color:var(--text);">'+m.drops+'</b></span>'+(m.best?'<br/><span style="color:var(--text-muted);">Your best: <b style="color:var(--text);">'+m.best+'</b></span>':'');
-  var eff=m.medal==='gold'?95:m.medal==='silver'?72:m.medal==='bronze'?62:0;
-  document.getElementById('eff-bar').style.width=eff+'%';
-  document.getElementById('eff-bar').style.background=eff>=80?'var(--amber)':eff>=67?'#9ca3af':eff>0?'#cd7f32':'transparent';
-  document.getElementById('mission-briefing').style.display='block';
-  document.getElementById('mission-list').style.display='none';
-}
-function startMission(){toast('Mission started: <b>'+missions[selectedMission].name+'</b>');closeBriefing();}
-function closeBriefing(){document.getElementById('mission-briefing').style.display='none';document.getElementById('mission-list').style.display='block';}
-
-var propData={
-  '2020':{'Airplanes':['Bell 407','Cessna 172SP','Boeing 747-8i','Douglas DC-3'],'Groundvehicles':['ASO_Firetruck01','ASO_Ambulance_Japan','ASO_FuelTruck01_White'],'Animals':['GrizzlyBear','HumpbackWhale','BlackBear'],'Humans':['Pilot_Male_Casual','Marshaller_Female_Summer_African']},
-  '2024':{'Airplanes':['CL415 Firefighting','AT802 Firefighting','S-64F Skycrane Firefighting Configuration','Bell UH-1H Iroquois'],'Groundvehicles':['Microsoft_Truck_Fire_Long','Microsoft_Truck_Fire_Medium_Red','Microsoft_Aerial_Tank','Microsoft_Bulldozer'],'Animals':['PLeoLeoMale','UThibetanusMale','ECaballusMale'],'Humans':['Pilot_SR_Rescue','Pilot_SR_Cropdusting','Copilot_Glider_Passive']}
-};
-var currentSource='2020';
-function openBrowser(){document.getElementById('prop-browser').style.display='block';loadSource('2020');}
-function closeBrowser(){document.getElementById('prop-browser').style.display='none';}
-function loadSource(ver){
-  currentSource=ver;
-  var cats=document.getElementById('browser-cats');
-  var items=document.getElementById('browser-items');
-  cats.innerHTML='';items.innerHTML='';
-  Object.keys(propData[ver]).forEach(function(cat){
-    var b=document.createElement('div');
-    b.className='fsf-btn';b.style.cssText='flex:0 0 auto;font-size:10px;padding:4px 8px;';
-    b.textContent=cat;
-    b.onclick=function(){loadCat(cat,ver);};
-    cats.appendChild(b);
-  });
-}
-function loadCat(cat,ver){
-  var items=document.getElementById('browser-items');
-  items.innerHTML='';
-  propData[ver][cat].forEach(function(name){
-    var d=document.createElement('div');
-    d.className='fsf-btn';d.style.cssText='font-size:11px;text-align:left;justify-content:flex-start;padding:5px 8px;font-family:monospace;';
-    d.textContent=name;
-    d.onclick=function(){
-      document.getElementById('prop-current').textContent=name;
-      closeBrowser();
-      toast('Selected: <b>'+name+'</b>');
-    };
-    items.appendChild(d);
-  });
-}
-
-function sendChat(){
-  var input=document.getElementById('chat-input');
-  var text=input.value.trim();
-  if(!text)return;
-  var area=document.getElementById('chat-area');
-  var msg=document.createElement('div');
-  msg.className='chat-msg';
-  msg.innerHTML='<div class="sender" style="color:var(--green);">You</div><div class="msg-text">'+text+'</div>';
-  area.appendChild(msg);
-  area.scrollTop=area.scrollHeight;
-  input.value='';
-  toast('Message sent');
-}
-
-function selectLang(el,lang){
-  el.closest('.sec-body').querySelectorAll('.fsf-btn').forEach(function(b){b.style.background='';b.style.borderColor='';});
-  el.style.background='rgba(244,18,22,0.15)';el.style.borderColor='rgba(244,18,22,0.35)';
-  toast('Language: <b>'+lang+'</b> (demo only — full i18n in simulator)');
-}
-
-function toggleInfo(section){
-  var body=section.querySelector('.info-body');
-  var chev=section.querySelector('.chevron');
-  var open=body.style.display!=='none';
-  body.style.display=open?'none':'block';
-  chev.textContent=open?'▸':'▾';
-}
-
-// Simulate map coordinate drift
-var lat=37.8124,lon=-122.4142;
-setInterval(function(){
-  lat+=((Math.random()-0.5)*0.001);
-  lon+=((Math.random()-0.5)*0.001);
-  document.getElementById('map-coords').textContent=lat.toFixed(4)+'° N · '+Math.abs(lon).toFixed(4)+'° W';
-},2000);
-
-// Fire tooltip on hover
-document.querySelectorAll('.fire-marker').forEach(function(fm){
-  var data=[
-    {title:'N CALIFORNIA COMPLEX',size:'SIZE 8',frp:'312 MW'},
-    {title:'OREGON COAST RANGE',size:'SIZE 5',frp:'87 MW'},
-    {title:'SIERRA NEVADA',size:'SIZE 3',frp:'41 MW'},
-    {title:'S CALIFORNIA SCRUB',size:'SIZE 9',frp:'487 MW'}
-  ];
-  var idx=parseInt(fm.getAttribute('data-fire'));
-  var tt=document.getElementById('fire-tooltip');
-  fm.addEventListener('mouseenter',function(){
-    tt.style.left=(fm.offsetLeft+14)+'px';
-    tt.style.top=(fm.offsetTop-20)+'px';
-    document.getElementById('tt-title').textContent=data[idx].title;
-    document.getElementById('tt-size').textContent=data[idx].size;
-    document.getElementById('tt-frp').textContent=data[idx].frp;
-    document.getElementById('tt-agl').textContent='850 ft AGL';
-    tt.classList.add('visible');
-  });
-  fm.addEventListener('mouseleave',function(){tt.classList.remove('visible');});
+// ── Init ──
+window.addEventListener('load',function(){
+  initMap();
+  buildInstrAccordion();
+  // Apply data-key in MP tab
+  document.querySelectorAll('[data-key]').forEach(function(el){el.innerHTML=T(el.getAttribute('data-key'));});
 });
 </script>
 </body>
