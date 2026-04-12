@@ -8,11 +8,11 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px 16px 48px;}
+body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#e5e7eb;font-size:13px;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;}
 .page-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#4b5563;margin-bottom:4px;text-align:center;font-family:'Courier New',monospace;}
 .page-sub{color:#374151;font-size:10px;text-align:center;margin-bottom:14px;}
 .page-sub span{color:#f41216;}
-.fsf-panel{width:380px;max-width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;height:600px;box-shadow:0 20px 60px rgba(0,0,0,.8);}
+.fsf-panel{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;height:640px;box-shadow:0 20px 60px rgba(0,0,0,.8);}
 .panel-titlebar{display:flex;align-items:center;justify-content:space-between;background:#161b22;padding:0 8px;height:32px;min-height:32px;flex-shrink:0;border-bottom:1px solid #30363d;}
 .panel-logo{font-weight:800;font-size:11px;letter-spacing:2px;color:#f41216;font-family:'Courier New',monospace;}
 .panel-winctrls{display:flex;gap:4px;}
@@ -181,9 +181,6 @@ body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,san
 </style>
 </head>
 <body>
-<p class="page-label" style="display:none;"></p>
-<p class="page-sub" style="display:none;"></p>
-
 <div class="fsf-panel">
   <div class="panel-titlebar">
     <span class="panel-logo">FS FIRE</span>
@@ -476,7 +473,6 @@ body{background:#0a0c10;font-family:-apple-system,'Segoe UI',Helvetica,Arial,san
   </div>
 </div>
 
-<p class="demo-note">Interactive panel demo — no simulator required. Live fires loaded from VIIRS NOAA-20 NRT satellite data via the FS Fire cloud backend.</p>
 <div class="toast" id="toast-el"></div>
 
 <script>
