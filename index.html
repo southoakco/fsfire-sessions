@@ -355,6 +355,41 @@ body::before {
 }
 
 /* ══════════════════════════════════════════
+   PANEL DEMO SECTION
+══════════════════════════════════════════ */
+#panel-demo-section {
+    background: var(--bg);
+    padding: 80px 24px;
+    border-top: 1px solid var(--border);
+}
+.demo-section-inner {
+    max-width: var(--max-w); margin: 0 auto;
+    display: flex; flex-direction: column; align-items: center;
+}
+.demo-disclaimer {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(245,158,11,0.07);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 28px; margin-bottom: 28px;
+    max-width: 520px; width: 100%;
+    font-size: 12px; color: #9ca3af; line-height: 1.6;
+}
+.demo-disclaimer-icon { color: #f59e0b; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.demo-disclaimer strong { color: #fbbf24; }
+.demo-frame-wrap {
+    width: 100%; display: flex; justify-content: center;
+}
+.demo-frame-wrap iframe {
+    width: 420px; max-width: 100%;
+    height: 720px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(48,54,61,0.8);
+}
+
+/* ══════════════════════════════════════════
    LIVE SESSIONS (embedded)
 ══════════════════════════════════════════ */
 #sessions-section {
@@ -626,6 +661,7 @@ footer {
     </div>
     <ul class="nav-links">
         <li><a href="#features">Features</a></li>
+        <li><a href="#panel-demo-section">Try the Panel</a></li>
         <li><a href="#sessions-section">Live Sessions</a></li>
         <li><a href="#how-it-works">How it Works</a></li>
         <li><a href="https://socosim.com" target="_blank">SoCoSim</a></li>
@@ -765,6 +801,22 @@ footer {
     </div>
 </div>
 
+<!-- ══ PANEL DEMO ══ -->
+<section id="panel-demo-section">
+    <div class="demo-section-inner">
+        <div class="section-tag">// Interactive Demo</div>
+        <h2 class="section-title">TRY THE PANEL</h2>
+        <p class="section-desc">Explore the FS Fire panel right here — live satellite fire data included. Click through all seven tabs to see the drop system, mission browser, multiplayer setup, and more.</p>
+        <div class="demo-disclaimer">
+            <span class="demo-disclaimer-icon">⚠</span>
+            <span><strong>Demo only.</strong> This is a simplified interactive preview. Not all features are fully replicated — fire suppression physics, SimConnect data, WASM integration, multiplayer sync, and Xbox controller support require the actual add-on running inside Microsoft Flight Simulator.</span>
+        </div>
+        <div class="demo-frame-wrap">
+            <iframe src="panel-demo.html" title="FS Fire Panel Demo" loading="lazy" scrolling="no"></iframe>
+        </div>
+    </div>
+</section>
+
 <!-- ══ HOW IT WORKS ══ -->
 <section class="section" id="how-it-works">
     <div class="section-tag">// Getting Started</div>
@@ -855,6 +907,7 @@ footer {
         </div>
         <div class="footer-links">
             <a href="#features">Features</a>
+            <a href="#panel-demo-section">Try the Panel</a>
             <a href="#how-it-works">How it Works</a>
             <a href="#sessions-section">Live Sessions</a>
             <a href="https://southoakco.github.io/fsfire-sessions" target="_blank">Sessions Browser</a>
