@@ -2,355 +2,900 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>FS Fire — Active Sessions</title>
-<meta name="description" content="Browse active FS Fire multiplayer firefighting sessions for Microsoft Flight Simulator."/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FS Fire — Aerial Firefighting for MSFS</title>
+<meta name="description" content="FS Fire adds realistic wildfire simulation and aerial firefighting to Microsoft Flight Simulator 2020 and 2024. Fight live satellite-tracked wildfires with friends."/>
 <meta name="theme-color" content="#0d1117"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
 /* ── Reset & Base ── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{
-    font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
-    background:#0d1117;color:#e5e7eb;min-height:100vh;
-    -webkit-font-smoothing:antialiased;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0c10;
+    color: #e5e7eb;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
 }
-a{color:#3b82f6;text-decoration:none}
-a:hover{text-decoration:underline}
+a { color: inherit; text-decoration: none; }
 
-/* ── Header ── */
-.header{
-    background:#161b22;border-bottom:1px solid #30363d;
-    padding:20px 16px 16px;text-align:center;position:sticky;top:0;z-index:10;
-}
-.header::after{
-    content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;
-    background:linear-gradient(90deg,transparent,rgba(244,18,22,.3) 50%,transparent);
-}
-.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
-.brand img{height:40px;width:auto}
-.subtitle{color:#6b7280;font-size:13px;letter-spacing:.3px}
-
-/* ── Status Bar ── */
-.status-bar{
-    display:flex;align-items:center;justify-content:center;gap:16px;
-    padding:10px 16px;background:rgba(22,27,34,.6);
-}
-.status-pill{
-    display:flex;align-items:center;gap:6px;
-    font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
-    color:#9ca3af;
-}
-.status-pill .dot{width:8px;height:8px;border-radius:50%;background:#22c55e;animation:pulse 2s ease-in-out infinite}
-.status-pill.count{color:#e5e7eb}
-.status-pill.count strong{color:#f41216;font-size:16px}
-.refresh-text{font-size:11px;color:#6b7280}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* ── Toolbar (Search + Sort) ── */
-.toolbar{
-    max-width:960px;margin:0 auto;padding:12px 12px 0;
-    display:flex;gap:8px;align-items:center;
-}
-.search-box{
-    flex:1;position:relative;
-}
-.search-box svg{
-    position:absolute;left:12px;top:50%;transform:translateY(-50%);
-    width:16px;height:16px;color:#6b7280;pointer-events:none;
-}
-.search-input{
-    width:100%;padding:10px 12px 10px 36px;
-    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;
-    color:#e5e7eb;font-size:14px;font-family:inherit;outline:none;
-    transition:border-color .15s;
-}
-.search-input:focus{border-color:rgba(244,18,22,.4)}
-.search-input::placeholder{color:#4b5563}
-
-.sort-select{
-    padding:10px 32px 10px 12px;
-    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:8px;
-    color:#e5e7eb;font-size:13px;font-weight:600;font-family:inherit;
-    outline:none;cursor:pointer;transition:border-color .15s;
-    -webkit-appearance:none;-moz-appearance:none;appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 10px center;
-}
-.sort-select:focus{border-color:rgba(244,18,22,.4)}
-
-.result-count{
-    font-size:12px;color:#6b7280;padding:4px 12px 0;max-width:960px;margin:0 auto;
-    display:none;
-}
-.result-count.visible{display:block}
-
-/* ── Container ── */
-.container{max-width:960px;margin:0 auto;padding:8px 12px 12px}
-
-/* ── Session Cards ── */
-.session-grid{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:560px){.session-grid{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:840px){.session-grid{grid-template-columns:repeat(3,1fr)}}
-
-.session-card{
-    background:rgba(22,27,34,.8);border:1px solid #30363d;border-radius:10px;
-    padding:14px 16px;cursor:pointer;transition:border-color .15s,transform .1s,background .15s;
-    position:relative;overflow:hidden;
-}
-.session-card:hover{border-color:rgba(244,18,22,.4);background:rgba(22,27,34,1);transform:translateY(-1px)}
-.session-card:active{transform:translateY(0)}
-
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.session-code{
-    font-family:'Consolas','Courier New',monospace;font-size:16px;font-weight:700;
-    letter-spacing:2px;color:#f41216;
-}
-.platform-badge{
-    font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-    padding:3px 8px;border-radius:4px;
-    background:rgba(59,130,246,.15);color:#3b82f6;border:1px solid rgba(59,130,246,.3);
-}
-.perm-server-badge{
-    font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
-    padding:3px 7px;border-radius:4px;
-    background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3);
+/* ── CSS Vars ── */
+:root {
+    --red: #f41216;
+    --red-dim: rgba(244,18,22,0.15);
+    --red-glow: rgba(244,18,22,0.4);
+    --orange: #f97316;
+    --surface: #13171f;
+    --surface2: #1a1f2a;
+    --border: rgba(255,255,255,0.08);
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --max-w: 1100px;
 }
 
-.host-name{color:#9ca3af;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.host-name strong{color:#e5e7eb}
-
-.card-description{
-    color:#6b7280;font-size:12px;font-style:italic;line-height:1.4;
-    margin-bottom:8px;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+/* ── Noise grain overlay ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
 }
 
-.card-stats{display:flex;gap:12px;flex-wrap:wrap}
-.stat{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600}
-.stat svg{width:16px;height:16px;flex-shrink:0}
-.stat.players svg{fill:#3b82f6}
-.stat.players{color:#3b82f6}
-.stat.fires svg{fill:#f41216}
-.stat.fires{color:#f41216}
-.stat.props svg{fill:#22c55e}
-.stat.props{color:#22c55e}
+/* ══════════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════════ */
+.navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(10,12,16,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.navbar::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--red-glow) 50%, transparent);
+}
+.nav-brand {
+    display: flex; align-items: center; gap: 10px;
+}
+.nav-brand img { height: 32px; width: auto; }
+.nav-links {
+    display: flex; align-items: center; gap: 28px;
+    list-style: none;
+}
+.nav-links a {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+    color: var(--text-dim); transition: color 0.15s;
+}
+.nav-links a:hover { color: #fff; }
+.nav-links a.active { color: var(--red); }
+.nav-cta {
+    background: var(--red);
+    color: #fff !important;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 700 !important;
+    transition: background 0.15s !important;
+}
+.nav-cta:hover { background: #dc0f13 !important; }
+.nav-company {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+}
+.nav-company img { height: 24px; opacity: 0.7; }
 
-.card-arrow{
-    position:absolute;right:14px;bottom:14px;color:#30363d;transition:color .15s;
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    text-align: center;
+    overflow: hidden;
 }
-.session-card:hover .card-arrow{color:#f41216}
 
-/* ── Empty State ── */
-.empty-state{
-    text-align:center;padding:60px 20px;
+/* Animated ember particles */
+.hero-bg {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
 }
-.empty-state svg{width:64px;height:64px;fill:#30363d;margin-bottom:16px}
-.empty-state h3{color:#6b7280;font-size:18px;margin-bottom:8px}
-.empty-state p{color:#4b5563;font-size:14px;line-height:1.6}
+.ember {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--red);
+    opacity: 0;
+    animation: float-up var(--dur, 6s) var(--delay, 0s) ease-in infinite;
+}
+@keyframes float-up {
+    0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+    10% { opacity: 0.8; }
+    80% { opacity: 0.3; }
+    100% { transform: translateY(-80vh) translateX(var(--drift, 40px)) scale(0.2); opacity: 0; }
+}
 
-/* ── Loading ── */
-.loading{text-align:center;padding:60px 20px;color:#6b7280}
-.spinner{
-    width:32px;height:32px;border:3px solid #30363d;border-top-color:#f41216;
-    border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;
+/* Radial glow behind hero */
+.hero::before {
+    content: '';
+    position: absolute;
+    bottom: -100px; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 600px;
+    background: radial-gradient(ellipse at center bottom, rgba(244,18,22,0.18) 0%, rgba(249,115,22,0.06) 40%, transparent 70%);
+    pointer-events: none;
 }
-@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Footer ── */
-.footer{
-    text-align:center;padding:24px 16px;color:#4b5563;font-size:12px;
-    border-top:1px solid rgba(48,54,61,.4);margin-top:24px;
+.hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--red); 
+    border: 1px solid rgba(244,18,22,0.3);
+    background: rgba(244,18,22,0.06);
+    padding: 6px 14px; border-radius: 4px;
+    margin-bottom: 28px;
+    animation: fade-in 0.6s ease both;
 }
-.footer a{color:#6b7280}
+.hero-eyebrow::before {
+    content: '';
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red);
+    animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-/* ── Error Toast ── */
-.error-toast{
-    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:rgba(239,68,68,.9);color:#fff;padding:10px 20px;border-radius:8px;
-    font-size:13px;font-weight:600;z-index:100;display:none;
-    box-shadow:0 4px 16px rgba(0,0,0,.4);
+.hero-logo {
+    margin-bottom: 28px;
+    animation: fade-in 0.6s 0.1s ease both;
 }
-.error-toast.visible{display:block}
+.hero-logo img { height: 90px; width: auto; filter: drop-shadow(0 0 40px rgba(244,18,22,0.5)); }
 
-/* ── Private Session Finder ── */
-.private-btn{
-    padding:10px 14px;background:rgba(22,27,34,.8);border:1px solid #30363d;
-    border-radius:8px;color:#9ca3af;font-size:13px;font-weight:600;
-    font-family:inherit;cursor:pointer;white-space:nowrap;
-    transition:border-color .15s,color .15s;flex-shrink:0;
+.hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 10vw, 110px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    color: #fff;
+    animation: fade-in 0.6s 0.2s ease both;
 }
-.private-btn:hover{border-color:rgba(244,18,22,.4);color:#f41216}
-.private-btn.active{border-color:rgba(244,18,22,.5);color:#f41216;background:rgba(244,18,22,.06)}
-.private-row{
-    max-width:960px;margin:0 auto;padding:0 12px;
-    display:none;
+.hero h1 span {
+    color: var(--red);
+    -webkit-text-stroke: 0px;
+    text-shadow: 0 0 60px rgba(244,18,22,0.6), 0 0 120px rgba(244,18,22,0.2);
 }
-.private-row.visible{display:flex;gap:8px;padding-top:8px}
-.private-input{
-    flex:1;padding:10px 12px;font-family:'Consolas','Courier New',monospace;
-    font-size:15px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
-    background:rgba(22,27,34,.8);border:1px solid rgba(244,18,22,.3);border-radius:8px;
-    color:#f41216;outline:none;transition:border-color .15s;max-width:200px;
+
+.hero-sub {
+    margin-top: 20px;
+    font-size: clamp(16px, 2.5vw, 20px);
+    color: var(--text-dim);
+    max-width: 560px;
+    line-height: 1.6;
+    font-weight: 400;
+    animation: fade-in 0.6s 0.3s ease both;
 }
-.private-input:focus{border-color:rgba(244,18,22,.7)}
-.private-input::placeholder{color:#4b5563;letter-spacing:1px;font-size:13px;text-transform:none}
-.private-go-btn{
-    padding:10px 18px;background:#f41216;border:none;border-radius:8px;
-    color:#fff;font-size:13px;font-weight:700;cursor:pointer;
-    transition:background .15s;white-space:nowrap;
+
+.hero-badges {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 24px; flex-wrap: wrap;
+    animation: fade-in 0.6s 0.4s ease both;
 }
-.private-go-btn:hover{background:#dc0f13}
-.private-go-btn:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
-.private-hint{font-size:12px;color:#6b7280;align-self:center;white-space:nowrap}
+.badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 6px 14px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+}
+.badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+.badge.msfs2020 { color: #3b82f6; border-color: rgba(59,130,246,0.25); background: rgba(59,130,246,0.06); }
+.badge.msfs2024 { color: #a855f7; border-color: rgba(168,85,247,0.25); background: rgba(168,85,247,0.06); }
+.badge.live { color: #22c55e; border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.06); }
+
+.hero-actions {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 36px; flex-wrap: wrap; justify-content: center;
+    animation: fade-in 0.6s 0.5s ease both;
+}
+.btn-primary {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--red);
+    color: #fff;
+    font-size: 15px; font-weight: 700;
+    padding: 14px 28px; border-radius: 8px;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(244,18,22,0.35);
+}
+.btn-primary:hover {
+    background: #dc0f13;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(244,18,22,0.5);
+}
+.btn-secondary {
+    display: flex; align-items: center; gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 15px; font-weight: 600;
+    padding: 14px 28px; border-radius: 8px;
+    transition: border-color 0.15s, color 0.15s;
+}
+.btn-secondary:hover { border-color: rgba(244,18,22,0.4); color: #fff; }
+
+/* Scroll indicator */
+.scroll-hint {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-muted);
+    animation: fade-in 1s 1.5s ease both;
+}
+.scroll-arrow {
+    width: 20px; height: 20px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg);
+    animation: bounce 1.5s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100% { transform: rotate(45deg) translateY(0); } 50% { transform: rotate(45deg) translateY(4px); } }
+
+@keyframes fade-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ══════════════════════════════════════════
+   FEATURES
+══════════════════════════════════════════ */
+.section { padding: 80px 24px; max-width: var(--max-w); margin: 0 auto; }
+
+.section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--red); margin-bottom: 12px;
+}
+.section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1;
+    color: #fff; margin-bottom: 14px;
+}
+.section-desc {
+    font-size: 16px; color: var(--text-dim); max-width: 540px; line-height: 1.7;
+}
+
+/* Feature Grid */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 48px;
+}
+.feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+}
+.feature-card:hover {
+    border-color: rgba(244,18,22,0.35);
+    transform: translateY(-2px);
+}
+.feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+    width: 44px; height: 44px;
+    background: var(--red-dim);
+    border: 1px solid rgba(244,18,22,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-size: 22px;
+}
+.feature-card h3 {
+    font-size: 16px; font-weight: 700; color: #fff;
+    margin-bottom: 8px;
+}
+.feature-card p {
+    font-size: 14px; color: var(--text-dim); line-height: 1.6;
+}
+
+/* Highlight card (spans 2 cols) */
+.feature-card.wide {
+    grid-column: span 2;
+    display: flex; gap: 28px; align-items: center;
+}
+@media (max-width: 700px) {
+    .feature-card.wide { grid-column: span 1; flex-direction: column; }
+}
+.feature-card.wide .feature-icon {
+    width: 60px; height: 60px; font-size: 30px; flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   STATS BAR
+══════════════════════════════════════════ */
+.stats-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px;
+}
+.stats-inner {
+    max-width: var(--max-w); margin: 0 auto;
+    display: flex; justify-content: space-around; flex-wrap: wrap; gap: 24px;
+}
+.stat-item { text-align: center; }
+.stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px; line-height: 1;
+    color: var(--red);
+}
+.stat-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--text-muted); margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════
+   LIVE SESSIONS (embedded)
+══════════════════════════════════════════ */
+#sessions-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+}
+.sessions-header {
+    max-width: var(--max-w); margin: 0 auto;
+    padding: 48px 24px 0;
+}
+.sessions-header-row {
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* Status pill */
+.live-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: #22c55e;
+}
+.live-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s ease-in-out infinite; }
+
+.session-count-label {
+    font-size: 13px; color: var(--text-muted);
+}
+.session-count-label strong { color: var(--red); font-size: 18px; }
+
+/* Toolbar */
+.toolbar {
+    max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
+    display: flex; gap: 8px; align-items: center;
+}
+.search-box { flex: 1; position: relative; }
+.search-box svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; color: var(--text-muted); pointer-events: none;
+}
+.search-input {
+    width: 100%; padding: 10px 12px 10px 36px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px;
+    color: #e5e7eb; font-size: 14px; font-family: inherit; outline: none;
+    transition: border-color 0.15s;
+}
+.search-input:focus { border-color: rgba(244,18,22,0.4); }
+.search-input::placeholder { color: #4b5563; }
+
+.sort-select {
+    padding: 10px 32px 10px 12px;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px;
+    color: #e5e7eb; font-size: 13px; font-weight: 600; font-family: inherit;
+    outline: none; cursor: pointer; transition: border-color 0.15s;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    background-color: rgba(0,0,0,0.3);
+}
+.sort-select:focus { border-color: rgba(244,18,22,0.4); }
+
+.private-btn {
+    padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-dim); font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer; white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s; flex-shrink: 0;
+}
+.private-btn:hover { border-color: rgba(244,18,22,0.4); color: var(--red); }
+.private-btn.active { border-color: rgba(244,18,22,0.5); color: var(--red); background: rgba(244,18,22,0.06); }
+
+.private-row {
+    max-width: var(--max-w); margin: 0 auto; padding: 0 24px;
+    display: none;
+}
+.private-row.visible { display: flex; gap: 8px; padding-top: 8px; }
+.private-input {
+    flex: 1; padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    background: rgba(0,0,0,0.3); border: 1px solid rgba(244,18,22,0.3); border-radius: 8px;
+    color: var(--red); outline: none; transition: border-color 0.15s; max-width: 200px;
+}
+.private-input:focus { border-color: rgba(244,18,22,0.7); }
+.private-input::placeholder { color: #4b5563; letter-spacing: 1px; font-size: 13px; text-transform: none; }
+.private-go-btn {
+    padding: 10px 18px; background: var(--red); border: none; border-radius: 8px;
+    color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: background 0.15s; white-space: nowrap;
+}
+.private-go-btn:hover { background: #dc0f13; }
+.private-go-btn:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+.private-hint { font-size: 12px; color: #6b7280; align-self: center; white-space: nowrap; }
+
+.result-count {
+    font-size: 12px; color: #6b7280; padding: 4px 24px 0;
+    max-width: var(--max-w); margin: 0 auto;
+    display: none;
+}
+.result-count.visible { display: block; }
+
+/* Session Grid */
+.sessions-body { max-width: var(--max-w); margin: 0 auto; padding: 12px 24px 48px; }
+.session-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .session-grid { grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 840px) { .session-grid { grid-template-columns: repeat(3,1fr); } }
+
+.session-card {
+    background: rgba(10,12,16,0.6); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s, background 0.15s;
+    position: relative; overflow: hidden;
+}
+.session-card:hover { border-color: rgba(244,18,22,0.4); background: rgba(10,12,16,0.9); transform: translateY(-1px); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.session-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px; font-weight: 700; letter-spacing: 2px; color: var(--red);
+}
+.platform-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+    background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3);
+}
+.host-name { color: var(--text-dim); font-size: 13px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.host-name strong { color: #e5e7eb; }
+.card-description {
+    color: #6b7280; font-size: 12px; font-style: italic; line-height: 1.4; margin-bottom: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.card-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.cs { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; }
+.cs svg { width: 16px; height: 16px; flex-shrink: 0; }
+.cs.players { color: #3b82f6; } .cs.players svg { fill: #3b82f6; }
+.cs.fires { color: var(--red); } .cs.fires svg { fill: var(--red); }
+.cs.props { color: #22c55e; } .cs.props svg { fill: #22c55e; }
+.card-arrow { position: absolute; right: 14px; bottom: 14px; color: #30363d; transition: color 0.15s; }
+.session-card:hover .card-arrow { color: var(--red); }
+
+/* Empty / Loading */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-state svg { width: 56px; height: 56px; fill: #30363d; margin-bottom: 16px; }
+.empty-state h3 { color: #6b7280; font-size: 18px; margin-bottom: 8px; }
+.empty-state p { color: #4b5563; font-size: 14px; line-height: 1.6; }
+.loading { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.spinner { width: 32px; height: 32px; border: 3px solid #30363d; border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sessions-footer-bar {
+    text-align: center; padding: 10px; font-size: 11px; color: #4b5563;
+    border-top: 1px solid var(--border);
+}
+
+/* ══════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════ */
+.steps {
+    display: flex; gap: 0; align-items: stretch;
+    margin-top: 48px; flex-wrap: wrap;
+}
+.step {
+    flex: 1; min-width: 200px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    position: relative;
+}
+.step:first-child { border-radius: 12px 0 0 12px; }
+.step:last-child { border-radius: 0 12px 12px 0; }
+.step + .step { border-left: none; }
+@media (max-width: 640px) {
+    .steps { flex-direction: column; }
+    .step { border-radius: 0 !important; }
+    .step + .step { border-left: 1px solid var(--border); border-top: none; }
+    .step:first-child { border-radius: 12px 12px 0 0 !important; }
+    .step:last-child { border-radius: 0 0 12px 12px !important; }
+}
+.step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px; color: rgba(244,18,22,0.15); line-height: 1;
+    margin-bottom: 8px;
+}
+.step h3 { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.step p { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 40px 24px;
+    text-align: center;
+}
+.footer-inner {
+    max-width: var(--max-w); margin: 0 auto;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.footer-brand { display: flex; align-items: center; gap: 10px; }
+.footer-brand img { height: 28px; opacity: 0.7; }
+.footer-brand span { font-size: 13px; color: var(--text-muted); }
+.footer-links { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.footer-links a { font-size: 13px; color: var(--text-muted); transition: color 0.15s; }
+.footer-links a:hover { color: #fff; }
+.footer-copy { font-size: 12px; color: #4b5563; }
+
+/* Error Toast */
+.error-toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(239,68,68,0.9); color: #fff; padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; z-index: 200; display: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.error-toast.visible { display: block; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE NAV
+══════════════════════════════════════════ */
+@media (max-width: 700px) {
+    .nav-links { display: none; }
+    .nav-company { display: none; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-    <div class="brand">
+<!-- EMBER BG -->
+<div class="hero-bg" id="ember-bg" aria-hidden="true"></div>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <img src="fsfwhite.png" alt="FS Fire logo"/>
+    </div>
+    <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#sessions-section">Live Sessions</a></li>
+        <li><a href="#how-it-works">How it Works</a></li>
+        <li><a href="https://socosim.com" target="_blank">SoCoSim</a></li>
+        <li><a href="https://flightsimulator.zendesk.com/hc/en-us" target="_blank" class="nav-cta">Get FS Fire</a></li>
+    </ul>
+    <div class="nav-company">
+        <img src="SoCoSim_Logo.png" alt="SoCoSim"/>
+        <span>by SoCoSim</span>
+    </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+    <div class="hero-eyebrow">Now with MSFS 2024 support</div>
+    <div class="hero-logo">
         <img src="fsfwhite.png" alt="FS Fire"/>
     </div>
-    <div class="subtitle">Active Multiplayer Sessions</div>
-</div>
-
-<div class="status-bar">
-    <div class="status-pill"><span class="dot"></span> LIVE</div>
-    <div class="status-pill count"><strong id="session-count">&mdash;</strong>&nbsp;Sessions</div>
-    <div class="refresh-text" id="refresh-text">Refreshing&hellip;</div>
-</div>
-
-<div class="toolbar">
-    <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="search-input" id="search-input" placeholder="Search sessions, hosts, descriptions&hellip;" autocomplete="off"/>
+    <h1>FIGHT<br/><span>FIRE</span><br/>FROM THE SKY</h1>
+    <p class="hero-sub">Realistic wildfire simulation and aerial firefighting for Microsoft Flight Simulator. Fight live satellite-tracked wildfires — solo or with friends.</p>
+    <div class="hero-badges">
+        <div class="badge msfs2020">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            MSFS 2020
+        </div>
+        <div class="badge msfs2024">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            MSFS 2024
+        </div>
+        <div class="badge live">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            Live Wildfire Data
+        </div>
     </div>
-    <select class="sort-select" id="sort-select">
-        <option value="players">Most Players</option>
-        <option value="newest">Newest</option>
-        <option value="fires">Most Fires</option>
-        <option value="platform_2024">MSFS 2024 First</option>
-        <option value="platform_2020">MSFS 2020 First</option>
-    </select>
-    <button class="private-btn" id="private-btn" title="Find a private session by ID">&#128274; Private</button>
-</div>
-<div class="private-row" id="private-row">
-    <input type="text" class="private-input" id="private-input" placeholder="Session ID&hellip;" maxlength="8" autocomplete="off" spellcheck="false"/>
-    <button class="private-go-btn" id="private-go-btn" disabled>Go</button>
-    <span class="private-hint">Enter the 8-character session ID</span>
-</div>
-<div class="result-count" id="result-count"></div>
+    <div class="hero-actions">
+        <a href="https://flightsimulator.zendesk.com/hc/en-us" target="_blank" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download on Marketplace
+        </a>
+        <a href="#sessions-section" class="btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            View Live Sessions
+        </a>
+    </div>
+    <div class="scroll-hint">
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
 
-<div class="container">
-    <div id="content">
-        <div class="loading"><div class="spinner"></div>Loading sessions&hellip;</div>
+<!-- ══ FEATURES ══ -->
+<section class="section" id="features">
+    <div class="section-tag">// Core Features</div>
+    <h2 class="section-title">EVERYTHING YOU NEED<br/>TO FIGHT FIRE</h2>
+    <p class="section-desc">FS Fire brings the intensity of aerial firefighting into MSFS with realistic simulation and live data.</p>
+
+    <div class="features-grid">
+        <div class="feature-card wide">
+            <div class="feature-icon">🔥</div>
+            <div>
+                <h3>Live Wildfire Hotspots</h3>
+                <p>FS Fire pulls real-time fire data from the VIIRS NOAA-20 satellite constellation, updated every 30 minutes. Fires are placed in-simulator based on their actual size and FRP intensity — so you're flying toward real active wildfires anywhere on the planet.</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛩️</div>
+            <h3>Aerial Firefighting</h3>
+            <p>Fly low and drop water, fire retardant, or foam to suppress dynamic wildfire simobjects. Physics-based drop zones account for altitude, airspeed, and heading.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3>Multiplayer</h3>
+            <p>Coordinate firefighting operations with friends on VATSIM, IVAO, or native MSFS multiplayer. VFX drops sync across all connected clients in real time.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🪣</div>
+            <h3>Bucket Drops</h3>
+            <p>Use a suspended water bucket under a helicopter — including pendulum physics and automatic water scooping from rivers and lakes at low altitude.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Mission System</h3>
+            <p>Over 250 handcrafted fire scenarios at real-world POIs. Missions vary in fire type, scale, time of day, and spawn location — no two missions feel the same.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>In-Game Chat</h3>
+            <p>Coordinate with your crew using the built-in session chat panel. Messages sync across all players in the same multiplayer session.</p>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <h3>Six Languages</h3>
+            <p>Full localization in English, Italian, German, French, Spanish, and Portuguese — so your whole crew can fly in their native language.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<div class="stats-bar">
+    <div class="stats-inner">
+        <div class="stat-item">
+            <div class="stat-num">375m</div>
+            <div class="stat-label">VIIRS Satellite Resolution</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">30min</div>
+            <div class="stat-label">Hotspot Update Interval</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">250+</div>
+            <div class="stat-label">Handcrafted Missions</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">6</div>
+            <div class="stat-label">Languages Supported</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">2</div>
+            <div class="stat-label">MSFS Versions</div>
+        </div>
     </div>
 </div>
 
-<div class="footer">
-    Powered by <a href="https://southoakco.com" target="_blank">FS Fire</a> &middot; Firefighting simulation for MSFS
-</div>
+<!-- ══ LIVE SESSIONS ══ -->
+<section id="sessions-section">
+    <div class="sessions-header">
+        <div class="sessions-header-row">
+            <div>
+                <div class="section-tag">// Multiplayer</div>
+                <h2 class="section-title" style="margin-bottom:4px;">LIVE SESSIONS</h2>
+                <div class="live-pill"><span class="dot"></span> Auto-refreshing</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="session-count-label">Active sessions: <strong id="session-count">—</strong></div>
+                <div id="refresh-label" style="font-size:11px;color:#4b5563;margin-top:4px;">Loading…</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" class="search-input" placeholder="Search host, code, region…" autocomplete="off"/>
+        </div>
+        <select id="sort-select" class="sort-select">
+            <option value="players">Most Players</option>
+            <option value="newest">Newest</option>
+            <option value="fires">Most Fires</option>
+            <option value="platform_2024">MSFS 2024</option>
+            <option value="platform_2020">MSFS 2020</option>
+        </select>
+        <button id="private-btn" class="private-btn">Private Session</button>
+    </div>
+
+    <div id="private-row" class="private-row">
+        <input type="text" id="private-input" class="private-input" placeholder="Session code…" maxlength="8" autocomplete="off"/>
+        <button id="private-go-btn" class="private-go-btn" disabled>Join</button>
+        <span class="private-hint">Enter 8-char code</span>
+    </div>
+
+    <div id="result-count" class="result-count"></div>
+
+    <div class="sessions-body">
+        <div id="sessions-content">
+            <div class="loading"><div class="spinner"></div>Loading sessions…</div>
+        </div>
+    </div>
+
+    <div class="sessions-footer-bar" id="sessions-footer-bar">&nbsp;</div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="section" id="how-it-works">
+    <div class="section-tag">// Getting Started</div>
+    <h2 class="section-title">READY IN MINUTES</h2>
+    <p class="section-desc">Get from installation to fighting your first wildfire in just a few steps.</p>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">01</div>
+            <h3>Download from Marketplace</h3>
+            <p>Find FS Fire on the Microsoft Flight Simulator in-game Marketplace and install it directly.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">02</div>
+            <h3>Open the Panel</h3>
+            <p>In any flight, open the FS Fire panel from the toolbar. Live hotspots load automatically from satellite data.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">03</div>
+            <h3>Pick a Fire or Mission</h3>
+            <p>Select a live wildfire or choose from 250+ missions. The fire spawns near your current location.</p>
+        </div>
+        <div class="step">
+            <div class="step-num">04</div>
+            <h3>Fly &amp; Fight</h3>
+            <p>Fly your tanker, helicopter, or scooper to the fire and start dropping. Invite friends to join your session.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <img src="SoCoSim_Logo.png" alt="SoCoSim"/>
+            <span>SoCoSim</span>
+        </div>
+        <div class="footer-links">
+            <a href="#features">Features</a>
+            <a href="#sessions-section">Live Sessions</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="https://southoakco.github.io/fsfire-sessions" target="_blank">Legacy Sessions</a>
+        </div>
+        <div class="footer-copy">© 2025 SoCoSim. FS Fire is an unofficial add-on for Microsoft Flight Simulator. Not affiliated with Asobo Studio or Microsoft.</div>
+    </div>
+</footer>
 
 <div class="error-toast" id="error-toast"></div>
 
 <script>
+/* ── Ember particle generator ── */
+(function() {
+    var bg = document.getElementById('ember-bg');
+    var count = 22;
+    for (var i = 0; i < count; i++) {
+        var el = document.createElement('div');
+        el.className = 'ember';
+        var left = 5 + Math.random() * 90;
+        var dur = 5 + Math.random() * 8;
+        var delay = Math.random() * 6;
+        var drift = (Math.random() - 0.5) * 120;
+        var size = 2 + Math.random() * 3;
+        el.style.cssText = 'left:' + left + '%;bottom:-10px;' +
+            '--dur:' + dur + 's;--delay:' + delay + 's;--drift:' + drift + 'px;' +
+            'width:' + size + 'px;height:' + size + 'px;';
+        // Some embers are orange
+        if (Math.random() > 0.6) el.style.background = '#f97316';
+        bg.appendChild(el);
+    }
+})();
+
+/* ── Sessions ── */
 (function() {
     'use strict';
-
     var API_BASE = 'https://us-central1-hotspots-433416.cloudfunctions.net/fsf-multiplayer';
-
     var REFRESH_INTERVAL = 15000;
-    var content = document.getElementById('content');
-    var countEl = document.getElementById('session-count');
-    var refreshEl = document.getElementById('refresh-text');
-    var errorToast = document.getElementById('error-toast');
-    var searchInput = document.getElementById('search-input');
-    var sortSelect = document.getElementById('sort-select');
-    var resultCountEl = document.getElementById('result-count');
-    var countdown = 15;
-
-    // Raw sessions from API — filtered/sorted on render
     var allSessions = [];
+    var countdown = Math.floor(REFRESH_INTERVAL / 1000);
 
+    var searchInput   = document.getElementById('search-input');
+    var sortSelect    = document.getElementById('sort-select');
+    var content       = document.getElementById('sessions-content');
+    var countEl       = document.getElementById('session-count');
+    var refreshLabel  = document.getElementById('refresh-label');
+    var resultCountEl = document.getElementById('result-count');
+    var footerBar     = document.getElementById('sessions-footer-bar');
+    var errorToast    = document.getElementById('error-toast');
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function platformLabel(p, other) {
+        if (p === 'msfs2024') return 'MSFS 2024';
+        if (p === 'msfs2020') return 'MSFS 2020';
+        if (p === 'other' && other) return esc(other);
+        return 'MSFS';
+    }
     function showError(msg) {
         errorToast.textContent = msg;
         errorToast.classList.add('visible');
         setTimeout(function() { errorToast.classList.remove('visible'); }, 4000);
     }
-
-    function escHtml(str) {
-        var d = document.createElement('div');
-        d.textContent = str || '';
-        return d.innerHTML;
-    }
-
-    function platformLabel(p, pOther) {
-        if (!p) return 'MSFS';
-        if (p === 'msfs2024') return 'MSFS 2024';
-        if (p === 'msfs2020') return 'MSFS 2020';
-        return p.toUpperCase();
-    }
-
-    // ── Filter ──
-    function filterSessions(sessions, query) {
-        if (!query) return sessions;
-        var q = query.toLowerCase();
+    function filterSessions(sessions, q) {
+        if (!q) return sessions;
+        q = q.toLowerCase();
         return sessions.filter(function(s) {
-            var searchable = [
-                s.sessionId,
-                s.hostName,
-                s.description,
-                s.platform,
-                platformLabel(s.platform, s.platformOther)
-            ].join(' ').toLowerCase();
-            return searchable.indexOf(q) !== -1;
+            return (s.sessionId && s.sessionId.toLowerCase().includes(q)) ||
+                   (s.hostName && s.hostName.toLowerCase().includes(q)) ||
+                   (s.description && s.description.toLowerCase().includes(q));
         });
     }
-
-    // ── Sort ──
-    function sortSessions(sessions, sortKey) {
+    function sortSessions(sessions, key) {
         var sorted = sessions.slice();
-        switch (sortKey) {
-            case 'players':
-                sorted.sort(function(a, b) { return b.playerCount - a.playerCount || b.createdAt - a.createdAt; });
-                break;
-            case 'newest':
-                sorted.sort(function(a, b) { return b.createdAt - a.createdAt; });
-                break;
-            case 'fires':
-                sorted.sort(function(a, b) { return b.fireCount - a.fireCount || b.playerCount - a.playerCount; });
-                break;
-            case 'platform_2024':
-                sorted.sort(function(a, b) {
-                    var aIs = a.platform === 'msfs2024' ? 0 : 1;
-                    var bIs = b.platform === 'msfs2024' ? 0 : 1;
-                    return aIs - bIs || b.playerCount - a.playerCount;
-                });
-                break;
-            case 'platform_2020':
-                sorted.sort(function(a, b) {
-                    var aIs = a.platform === 'msfs2020' ? 0 : 1;
-                    var bIs = b.platform === 'msfs2020' ? 0 : 1;
-                    return aIs - bIs || b.playerCount - a.playerCount;
-                });
-                break;
+        switch (key) {
+            case 'players': sorted.sort(function(a,b){ return b.playerCount - a.playerCount || b.createdAt - a.createdAt; }); break;
+            case 'newest':  sorted.sort(function(a,b){ return b.createdAt - a.createdAt; }); break;
+            case 'fires':   sorted.sort(function(a,b){ return b.fireCount - a.fireCount || b.playerCount - a.playerCount; }); break;
+            case 'platform_2024': sorted.sort(function(a,b){ return (a.platform==='msfs2024'?0:1)-(b.platform==='msfs2024'?0:1)||b.playerCount-a.playerCount; }); break;
+            case 'platform_2020': sorted.sort(function(a,b){ return (a.platform==='msfs2020'?0:1)-(b.platform==='msfs2020'?0:1)||b.playerCount-a.playerCount; }); break;
         }
         return sorted;
     }
 
-    // ── Render ──
     function renderSessions() {
-        var query = searchInput.value.trim();
+        var q = searchInput.value.trim();
         var sortKey = sortSelect.value;
-
-        var filtered = filterSessions(allSessions, query);
+        var filtered = filterSessions(allSessions, q);
         var sorted = sortSessions(filtered, sortKey);
-
         countEl.textContent = allSessions.length;
 
-        // Show result count only when searching
-        if (query && allSessions.length > 0) {
-            resultCountEl.textContent = sorted.length + ' of ' + allSessions.length + ' sessions match "' + query + '"';
+        if (q && allSessions.length > 0) {
+            resultCountEl.textContent = sorted.length + ' of ' + allSessions.length + ' sessions match "' + esc(q) + '"';
             resultCountEl.classList.add('visible');
         } else {
             resultCountEl.classList.remove('visible');
@@ -359,19 +904,17 @@ a:hover{text-decoration:underline}
         if (allSessions.length === 0) {
             content.innerHTML =
                 '<div class="empty-state">' +
-                    '<svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' +
-                    '<h3>No Active Sessions</h3>' +
-                    '<p>There are no public multiplayer sessions right now.<br/>Start one in FS Fire and it will appear here!</p>' +
+                '<svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' +
+                '<h3>No Active Sessions</h3>' +
+                '<p>No public multiplayer sessions right now.<br/>Start one in FS Fire and it will appear here!</p>' +
                 '</div>';
             return;
         }
-
         if (sorted.length === 0) {
             content.innerHTML =
                 '<div class="empty-state">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="#30363d" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
-                    '<h3>No Matching Sessions</h3>' +
-                    '<p>No sessions match your search. Try different keywords.</p>' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="#30363d" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+                '<h3>No Matching Sessions</h3><p>Try different keywords.</p>' +
                 '</div>';
             return;
         }
@@ -379,36 +922,32 @@ a:hover{text-decoration:underline}
         var html = '<div class="session-grid">';
         for (var i = 0; i < sorted.length; i++) {
             var s = sorted[i];
-            var desc = s.description ? '<div class="card-description">' + escHtml(s.description) + '</div>' : '';
+            var desc = s.description ? '<div class="card-description">' + esc(s.description) + '</div>' : '';
             html +=
-                '<div class="session-card" onclick="window.location.href=\'session.html?id=' + s.sessionId + '\'">' +
-                    '<div class="card-header">' +
-                        '<span class="session-code">' + s.sessionId + '</span>' +
-                        '<span class="platform-badge">' + platformLabel(s.platform, s.platformOther) + '</span>' +
-                        (s.permanent ? '<span class="perm-server-badge">PERMANENT</span>' : '') +
-                    '</div>' +
-                    '<div class="host-name">Host: <strong>' + escHtml(s.hostName) + '</strong></div>' +
-                    desc +
-                    '<div class="card-stats">' +
-                        '<div class="stat players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' + s.playerCount + '</div>' +
-                        '<div class="stat fires"><svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' + s.fireCount + '</div>' +
-                        '<div class="stat props"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' + s.propCount + '</div>' +
-                    '</div>' +
-                    '<div class="card-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg></div>' +
+                '<div class="session-card" onclick="window.location.href=\'session.html?id=' + esc(s.sessionId) + '\'">' +
+                '<div class="card-header">' +
+                '<span class="session-code">' + esc(s.sessionId) + '</span>' +
+                '<span class="platform-badge">' + platformLabel(s.platform, s.platformOther) + '</span>' +
+                '</div>' +
+                '<div class="host-name">Host: <strong>' + esc(s.hostName) + '</strong></div>' +
+                desc +
+                '<div class="card-stats">' +
+                '<div class="cs players"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' + s.playerCount + '</div>' +
+                '<div class="cs fires"><svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>' + s.fireCount + '</div>' +
+                '<div class="cs props"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' + s.propCount + '</div>' +
+                '</div>' +
+                '<div class="card-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg></div>' +
                 '</div>';
         }
         html += '</div>';
         content.innerHTML = html;
     }
 
-    // ── Search & Sort event handlers ──
     searchInput.addEventListener('input', renderSessions);
     sortSelect.addEventListener('change', renderSessions);
 
-    // ── Fetch ──
     function fetchSessions() {
-        refreshEl.textContent = 'Refreshing\u2026';
-
+        refreshLabel.textContent = 'Refreshing…';
         var xhr = new XMLHttpRequest();
         xhr.open('GET', API_BASE + '/sessions/public', true);
         xhr.timeout = 10000;
@@ -420,34 +959,26 @@ a:hover{text-decoration:underline}
                         allSessions = data.sessions || [];
                         renderSessions();
                         countdown = Math.floor(REFRESH_INTERVAL / 1000);
-                    } else {
-                        showError(data.error || 'Failed to load sessions');
-                    }
-                } catch (e) {
-                    showError('Invalid response from server');
-                }
-            } else {
-                showError('Server error: ' + xhr.status);
-            }
+                    } else { showError(data.error || 'Failed to load sessions'); }
+                } catch(e) { showError('Invalid response from server'); }
+            } else { showError('Server error: ' + xhr.status); }
         };
-        xhr.onerror = function() { showError('Network error \u2014 check your connection'); };
+        xhr.onerror = function() { showError('Network error'); };
         xhr.ontimeout = function() { showError('Request timed out'); };
         xhr.send();
     }
 
-    function startCountdown() {
-        setInterval(function() {
-            countdown--;
-            if (countdown <= 0) {
-                fetchSessions();
-            } else {
-                refreshEl.textContent = 'Refresh in ' + countdown + 's';
-            }
-        }, 1000);
+    function tick() {
+        countdown--;
+        if (countdown <= 0) {
+            fetchSessions();
+        } else {
+            refreshLabel.textContent = 'Refresh in ' + countdown + 's';
+            footerBar.textContent = 'Auto-refresh in ' + countdown + 's';
+        }
     }
 
-
-    // ── Private Session Finder ────────────────────────────────────────────
+    /* Private session finder */
     var privateBtn   = document.getElementById('private-btn');
     var privateRow   = document.getElementById('private-row');
     var privateInput = document.getElementById('private-input');
@@ -456,34 +987,26 @@ a:hover{text-decoration:underline}
     privateBtn.addEventListener('click', function() {
         var open = privateRow.classList.toggle('visible');
         privateBtn.classList.toggle('active', open);
-        if (open) {
-            privateInput.focus();
-        } else {
-            privateInput.value = '';
-            privateGoBtn.disabled = true;
-        }
+        if (open) privateInput.focus();
+        else { privateInput.value = ''; privateGoBtn.disabled = true; }
     });
-
     privateInput.addEventListener('input', function() {
         var val = this.value.trim().toUpperCase();
         this.value = val;
         privateGoBtn.disabled = val.length !== 8;
     });
-
     privateInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && this.value.trim().length === 8) goToPrivateSession();
+        if (e.key === 'Enter' && this.value.trim().length === 8) goPrivate();
     });
-
-    privateGoBtn.addEventListener('click', goToPrivateSession);
-
-    function goToPrivateSession() {
+    privateGoBtn.addEventListener('click', goPrivate);
+    function goPrivate() {
         var id = privateInput.value.trim().toUpperCase();
         if (id.length !== 8) return;
         window.location.href = 'session.html?id=' + encodeURIComponent(id);
     }
 
     fetchSessions();
-    startCountdown();
+    setInterval(tick, 1000);
 })();
 </script>
 </body>
