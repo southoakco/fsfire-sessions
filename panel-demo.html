@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FS Fire — Panel Demo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c10;--panel-bg:#111318;--panel-border:#1f2330;
+  --red:#f41216;--red-dim:rgba(244,18,22,0.15);--red-border:rgba(244,18,22,0.35);
+  --text:#e5e7eb;--text-dim:#9ca3af;--text-muted:#4b5563;
+  --btn-bg:rgba(255,255,255,0.06);--btn-hover:rgba(255,255,255,0.11);
+  --btn-active:rgba(244,18,22,0.18);--tab-active:#f41216;
+  --section-header:rgba(244,18,22,0.12);
+  --green:#22c55e;--blue:#3b82f6;--amber:#f59e0b;
+  --fire1:#f97316;--fire2:#ef4444;
+  --font:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;}
+h1{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;text-align:center;font-family:var(--font);}
+.demo-label{color:var(--text-dim);font-size:11px;text-align:center;margin-bottom:18px;letter-spacing:0.05em;}
+.demo-label span{color:var(--red);font-weight:600;}
+
+/* ── DEVICE FRAME ── */
+.device{
+  width:360px;background:var(--panel-bg);border:1px solid var(--panel-border);
+  border-radius:12px;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.04);
+  display:flex;flex-direction:column;max-height:620px;
+}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;
+  background:rgba(0,0,0,0.4);border-bottom:1px solid var(--panel-border);
+  font-family:var(--font);font-size:10px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 4px var(--green);}
+.status-text{color:var(--text-dim);flex:1;}
+.status-guest{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;padding:1px 6px;border-radius:3px;font-size:9px;letter-spacing:0.08em;}
+
+/* ── TAB BAR ── */
+.tab-bar{
+  display:flex;background:rgba(0,0,0,0.35);border-bottom:1px solid var(--panel-border);
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:7px 2px 6px;cursor:pointer;border-bottom:2px solid transparent;
+  transition:background 0.15s,border-color 0.15s;
+  color:var(--text-muted);
+}
+.tab:hover{background:var(--btn-hover);color:var(--text-dim);}
+.tab.active{border-bottom-color:var(--tab-active);color:#fff;background:rgba(244,18,22,0.07);}
+.tab svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+.tab.fire-tab svg{fill:currentColor;stroke:none;}
+.tab-label{font-size:9px;letter-spacing:0.06em;text-transform:uppercase;font-family:var(--font);}
+
+/* ── CONTENT AREA ── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--panel-border) transparent;}
+.tab-pane{display:none;padding:0;}
+.tab-pane.active{display:block;}
+
+/* ── SECTION HEADERS ── */
+.sec-hdr{
+  background:var(--section-header);border-top:1px solid var(--panel-border);border-bottom:1px solid var(--panel-border);
+  padding:5px 12px;font-size:10px;font-family:var(--font);letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--red);
+}
+.sec-body{padding:10px 12px;}
+.sec-body + .sec-hdr{margin-top:0;}
+
+/* ── BUTTONS ── */
+.fsf-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--btn-bg);border:1px solid rgba(255,255,255,0.1);
+  color:var(--text);border-radius:5px;padding:7px 12px;cursor:pointer;
+  font-size:12px;font-family:inherit;transition:background 0.12s,border-color 0.12s;
+  user-select:none;width:100%;text-align:center;
+}
+.fsf-btn:hover{background:var(--btn-hover);border-color:rgba(255,255,255,0.2);}
+.fsf-btn:active{background:var(--btn-active);transform:scale(0.98);}
+.fsf-btn.danger{background:rgba(244,18,22,0.12);border-color:rgba(244,18,22,0.3);color:#f87171;}
+.fsf-btn.danger:hover{background:rgba(244,18,22,0.2);}
+.fsf-btn.success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#86efac;}
+.fsf-btn.success:hover{background:rgba(34,197,94,0.18);}
+.fsf-btn.accent{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#93c5fd;}
+.fsf-btn.accent:hover{background:rgba(59,130,246,0.2);}
+.fsf-btn.purple{background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3);color:#c4b5fd;}
+.row-2{display:flex;gap:8px;}
+.row-2 .fsf-btn{flex:1;}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;gap:10px;padding:4px 0;}
+.toggle-label{color:var(--text-dim);flex:1;font-size:12px;}
+.toggle{width:36px;height:20px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;transition:background 0.2s;}
+.toggle.on{background:rgba(244,18,22,0.7);border-color:rgba(244,18,22,0.5);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left 0.2s;}
+.toggle.on::after{left:18px;}
+
+/* ── SELECTOR (two-button) ── */
+.selector{display:flex;border:1px solid rgba(255,255,255,0.1);border-radius:5px;overflow:hidden;}
+.sel-btn{flex:1;padding:6px;text-align:center;cursor:pointer;font-size:12px;color:var(--text-dim);transition:background 0.12s,color 0.12s;}
+.sel-btn.active{background:var(--red-dim);color:var(--text);border-color:var(--red-border);}
+
+/* ── MAP TAB ── */
+.map-area{
+  position:relative;height:240px;background:#0f1520;overflow:hidden;
+  border-bottom:1px solid var(--panel-border);
+}
+.map-img{width:100%;height:100%;object-fit:cover;opacity:0.7;}
+.map-placeholder{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0a1020 0%,#0f1a2e 50%,#0a1020 100%);
+  position:relative;overflow:hidden;
+}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(59,130,246,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.05) 1px,transparent 1px);background-size:30px 30px;}
+.map-aircraft{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;}
+.map-aircraft svg{width:22px;height:22px;fill:#3b82f6;drop-shadow:0 0 6px #3b82f6;}
+.fire-marker{position:absolute;width:10px;height:10px;border-radius:50%;cursor:pointer;transform:translate(-50%,-50%);animation:pulse 2s infinite;}
+.fire-marker.lg{width:14px;height:14px;}
+.fire-marker.sm{width:7px;height:7px;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,18,22,0.6);}50%{box-shadow:0 0 0 5px rgba(244,18,22,0);}}
+.drop-marker{position:absolute;width:18px;height:18px;border-radius:50%;background:rgba(59,130,246,0.3);border:1px solid #3b82f6;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;}
+.drop-marker::after{content:'';width:6px;height:6px;border-radius:50%;background:#3b82f6;}
+.mp-plane{position:absolute;transform:translate(-50%,-50%);}
+.mp-plane svg{width:14px;height:14px;fill:#22c55e;}
+.mp-label{position:absolute;font-size:9px;color:#86efac;font-family:var(--font);white-space:nowrap;transform:translate(-50%,8px);}
+.map-tools{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:4px;z-index:20;}
+.map-btn{width:28px;height:28px;background:rgba(10,12,16,0.85);border:1px solid var(--panel-border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);}
+.map-btn:hover{background:rgba(30,35,50,0.95);color:var(--text);}
+.map-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;}
+.tooltip-box{display:none;position:absolute;background:rgba(10,12,16,0.95);border:1px solid var(--panel-border);border-radius:5px;padding:7px 10px;font-size:11px;z-index:30;pointer-events:none;min-width:130px;}
+.tooltip-box.visible{display:block;}
+.tt-title{font-family:var(--font);color:var(--red);font-size:10px;letter-spacing:0.08em;margin-bottom:3px;}
+.tt-row{color:var(--text-dim);line-height:1.6;}
+.tt-row b{color:var(--text);}
+.map-coords{position:absolute;bottom:6px;left:8px;font-family:var(--font);font-size:9px;color:rgba(59,130,246,0.8);z-index:20;}
+
+/* ── FIRE INFO ROWS ── */
+.fire-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.fire-row:last-child{border-bottom:none;}
+.fire-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.fire-name{flex:1;color:var(--text);font-size:12px;}
+.fire-size-badge{font-family:var(--font);font-size:10px;padding:2px 7px;border-radius:3px;background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;}
+.fire-frp{font-size:10px;color:var(--text-muted);}
+
+/* ── SLIDER ── */
+.slider-row{display:flex;align-items:center;gap:8px;}
+.slider-row input[type=range]{flex:1;accent-color:var(--red);}
+.slider-row span{font-family:var(--font);font-size:11px;color:var(--text-dim);min-width:20px;text-align:center;}
+.size-display{text-align:center;font-family:var(--font);font-size:11px;color:var(--red);margin-top:4px;}
+
+/* ── DROP TAB ── */
+.drop-now-btn{
+  width:100%;padding:16px;background:rgba(244,18,22,0.15);border:2px solid var(--red-border);
+  color:#fff;font-size:16px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  border-radius:6px;cursor:pointer;transition:all 0.15s;font-family:var(--font);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.drop-now-btn:hover{background:rgba(244,18,22,0.28);border-color:var(--red);}
+.drop-now-btn:active{transform:scale(0.97);}
+.drop-now-btn.armed{background:rgba(244,18,22,0.35);border-color:var(--red);animation:armed-pulse 1.2s infinite;}
+@keyframes armed-pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,18,22,0.5);}50%{box-shadow:0 0 0 8px rgba(244,18,22,0);}}
+.gps-coords{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:5px;padding:8px 10px;font-family:var(--font);font-size:11px;color:#93c5fd;margin-top:6px;}
+.stat-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px;border-radius:4px;font-family:var(--font);}
+.stat-pill.alt{background:rgba(34,197,94,0.1);color:#86efac;}
+.stat-pill.spd{background:rgba(59,130,246,0.1);color:#93c5fd;}
+.stat-pill.hdg{background:rgba(245,158,11,0.1);color:#fcd34d;}
+.stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+
+/* ── MP TAB ── */
+.mp-session-box{background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:10px 12px;}
+.mp-code{font-family:var(--font);font-size:20px;font-weight:700;letter-spacing:4px;color:var(--green);text-align:center;padding:6px 0;}
+.mp-player{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.mp-player:last-child{border-bottom:none;}
+.mp-avatar{width:24px;height:24px;border-radius:50%;background:rgba(59,130,246,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#93c5fd;flex-shrink:0;}
+.mp-pname{flex:1;font-size:12px;}
+.mp-host-badge{font-size:9px;padding:1px 5px;background:var(--red-dim);border:1px solid var(--red-border);border-radius:3px;color:#f87171;font-family:var(--font);}
+.mp-guest-badge{font-size:9px;padding:1px 5px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:3px;color:#86efac;font-family:var(--font);}
+.chat-area{background:rgba(0,0,0,0.2);border-radius:5px;padding:8px;max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.chat-msg{font-size:11px;line-height:1.4;}
+.chat-msg .sender{color:var(--red);font-family:var(--font);font-size:10px;margin-bottom:1px;}
+.chat-msg .msg-text{color:var(--text-dim);}
+.chat-input-row{display:flex;gap:6px;margin-top:6px;}
+.chat-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;color:var(--text);font-size:12px;font-family:inherit;}
+.chat-input:focus{outline:none;border-color:rgba(255,255,255,0.25);}
+.chat-send{background:var(--red-dim);border:1px solid var(--red-border);color:#f87171;border-radius:4px;padding:6px 10px;cursor:pointer;font-size:12px;}
+.qr-box{width:60px;height:60px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qr-box svg{width:52px;height:52px;}
+
+/* ── MISSIONS TAB ── */
+.mission-card{background:rgba(255,255,255,0.03);border:1px solid var(--panel-border);border-radius:6px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:border-color 0.15s;}
+.mission-card:hover{border-color:rgba(244,18,22,0.3);}
+.mission-card.selected{border-color:var(--red);background:var(--red-dim);}
+.mc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+.mc-name{font-size:12px;font-weight:600;color:var(--text);}
+.mc-type{font-size:9px;padding:2px 6px;border-radius:3px;font-family:var(--font);}
+.mc-type.wildfire{background:rgba(244,18,22,0.12);border:1px solid var(--red-border);color:#f87171;}
+.mc-type.vehicle{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fcd34d;}
+.mc-type.structure{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
+.mc-loc{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
+.mc-stats{display:flex;gap:8px;font-size:10px;color:var(--text-dim);}
+.medal{font-size:11px;font-family:var(--font);}
+.medal.gold{color:#fbbf24;}
+.medal.silver{color:#9ca3af;}
+.medal.bronze{color:#cd7f32;}
+.eff-bar-wrap{background:rgba(0,0,0,0.3);border-radius:3px;height:6px;overflow:hidden;margin-top:6px;}
+.eff-bar{height:100%;border-radius:3px;transition:width 0.5s;}
+.filter-row{display:flex;gap:4px;flex-wrap:wrap;padding:8px 12px 4px;}
+.filter-btn{font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);cursor:pointer;background:transparent;font-family:var(--font);transition:all 0.12s;}
+.filter-btn.active{background:var(--red-dim);border-color:var(--red-border);color:var(--text);}
+
+/* ── PROPS TAB ── */
+.prop-current{font-family:var(--font);font-size:11px;color:#93c5fd;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:4px;padding:6px 10px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kbinput{background:var(--btn-bg);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:6px 10px;color:var(--text-dim);font-size:12px;font-family:var(--font);width:100%;cursor:pointer;text-align:left;}
+
+/* ── NOTIFICATION TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:rgba(15,20,30,0.97);border:1px solid var(--panel-border);border-radius:6px;padding:9px 16px;font-size:12px;color:var(--text-dim);transition:transform 0.3s;z-index:100;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast b{color:var(--text);}
+
+/* ── DEMO NOTE ── */
+.demo-note{margin-top:14px;font-size:11px;color:var(--text-muted);text-align:center;max-width:360px;line-height:1.6;}
+.demo-note a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px;}
+</style>
+</head>
+<body>
+
+<h1>FS Fire — Interactive Panel Demo</h1>
+<p class="demo-label">Simulated panel • <span>not connected to a simulator</span></p>
+
+<div class="device">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text" id="status-text">Connected · MSFS 2024</span>
+    <span class="status-guest" style="display:none" id="guest-badge">GUEST</span>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <div class="tab active" data-tab="map">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span class="tab-label">Map</span>
+    </div>
+    <div class="tab" data-tab="drop">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="tab-label">Drop</span>
+    </div>
+    <div class="tab fire-tab" data-tab="fires">
+      <svg viewBox="0 0 24 24"><path d="M12 23c-3.9 0-7-2.8-7-6.3 0-2.2 1.1-4.2 2.8-5.8.4-.4 1-.2 1.1.3.2 1 .6 1.9 1.2 2.7C11.2 11 12 7 12 3c0-.5.5-.8.9-.5C16.5 5.3 19 9.2 19 13.5 19 18.5 16.4 23 12 23z"/></svg>
+      <span class="tab-label">Fires</span>
+    </div>
+    <div class="tab" data-tab="missions">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="tab-label">Missions</span>
+    </div>
+    <div class="tab" data-tab="props">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <span class="tab-label">Props</span>
+    </div>
+    <div class="tab" data-tab="mp">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="tab-label">MP</span>
+    </div>
+    <div class="tab" data-tab="info">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span class="tab-label">Info</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- MAP TAB -->
+    <div class="tab-pane active" id="pane-map">
+      <div class="map-area">
+        <div class="map-placeholder">
+          <div class="map-grid"></div>
+          <!-- Aircraft -->
+          <div class="map-aircraft" id="map-aircraft">
+            <svg viewBox="0 0 24 24"><path d="M21 16l-9-4-9 4V4l9-4 9 4v12z" fill="#3b82f6"/><path d="M12 20v-8" stroke="#93c5fd" stroke-width="1" fill="none"/></svg>
+          </div>
+          <!-- Fire markers -->
+          <div class="fire-marker lg" style="top:38%;left:62%;background:var(--red);" data-fire="0" id="fm0"></div>
+          <div class="fire-marker" style="top:55%;left:35%;background:#f97316;" data-fire="1" id="fm1"></div>
+          <div class="fire-marker sm" style="top:28%;left:45%;background:#f97316;" data-fire="2" id="fm2"></div>
+          <div class="fire-marker lg" style="top:68%;left:72%;background:var(--red);" data-fire="3" id="fm3"></div>
+          <!-- MP plane -->
+          <div class="mp-plane" style="top:30%;left:75%;" id="mp-plane" style="display:none">
+            <svg viewBox="0 0 24 24"><path d="M21 16l-9-4-9 4V4l9-4 9 4v12z" fill="#22c55e"/></svg>
+          </div>
+          <div class="mp-label" style="top:30%;left:75%;" id="mp-label" style="display:none">N7823T</div>
+          <!-- Drop marker -->
+          <div class="drop-marker" style="top:44%;left:60%;display:none;" id="drop-mark"></div>
+          <!-- Tooltip -->
+          <div class="tooltip-box" id="fire-tooltip">
+            <div class="tt-title" id="tt-title">FIRE</div>
+            <div class="tt-row"><b id="tt-size">SIZE 8</b></div>
+            <div class="tt-row">FRP: <b id="tt-frp">312 MW</b></div>
+            <div class="tt-row">Alt: <b id="tt-agl">— ft AGL</b></div>
+          </div>
+        </div>
+        <!-- Map tools -->
+        <div class="map-tools">
+          <div class="map-btn" title="Center on aircraft" onclick="toast('Centering on aircraft')">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+          </div>
+          <div class="map-btn" onclick="toast('Zoomed in')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="map-btn" onclick="toast('Zoomed out')">
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="map-btn" id="northup-btn" title="Toggle north-up" onclick="toggleNorthUp(this)">
+            <svg viewBox="0 0 24 24"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </div>
+          <div class="map-btn" id="declutter-btn" title="Declutter" onclick="cycleDeclutter(this)">
+            <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          </div>
+        </div>
+        <div class="map-coords" id="map-coords">37.8124° N · 122.4142° W</div>
+      </div>
+      <!-- Live fires list -->
+      <div class="sec-hdr">Live Hotspots — VIIRS NOAA-20</div>
+      <div class="sec-body">
+        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">N California Complex</span><span class="fire-size-badge">SIZE 8</span><span class="fire-frp">312 MW</span></div>
+        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Oregon Coast Range</span><span class="fire-size-badge">SIZE 5</span><span class="fire-frp">87 MW</span></div>
+        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Sierra Nevada Foothills</span><span class="fire-size-badge">SIZE 3</span><span class="fire-frp">41 MW</span></div>
+        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">S California Scrub</span><span class="fire-size-badge">SIZE 9</span><span class="fire-frp">487 MW</span></div>
+      </div>
+      <div class="sec-body" style="padding-top:0;">
+        <div style="font-size:10px;color:var(--text-muted);font-family:monospace;text-align:right;">Updated 4 min ago · 4 fires in range</div>
+      </div>
+    </div>
+
+    <!-- DROP TAB -->
+    <div class="tab-pane" id="pane-drop">
+      <div class="sec-hdr">Drop Configuration</div>
+      <div class="sec-body">
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">DROP TYPE</div>
+          <div class="selector">
+            <div class="sel-btn active" onclick="selectDrop(this,'Retardant')">Red Retardant</div>
+            <div class="sel-btn" onclick="selectDrop(this,'Water')">Water</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">TANK MODE</div>
+          <div style="display:flex;gap:5px;">
+            <div class="fsf-btn active" style="flex:1;font-size:11px;" onclick="selectTank(this,'Unlimited')">Unlimited</div>
+            <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectTank(this,'Land Refill')">Land Refill</div>
+            <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectTank(this,'Water Scoop')">Water Scoop</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">HELICOPTER MODE</div>
+          <div class="selector">
+            <div class="sel-btn active" onclick="selectHeli(this,'Fuselage')">Fuselage Drop</div>
+            <div class="sel-btn" onclick="selectHeli(this,'Bucket')">Bucket</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-hdr">Flight Parameters</div>
+      <div class="sec-body">
+        <div class="stats-row">
+          <div class="stat-pill alt">ALT: <b>850 ft AGL</b></div>
+          <div class="stat-pill spd">GS: <b>118 kts</b></div>
+          <div class="stat-pill hdg">HDG: <b>247°</b></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:8px;font-family:monospace;line-height:1.7;">
+          Drop zone offset: <span style="color:var(--text-dim);">+340 ft forward</span><br/>
+          Splash radius: <span style="color:var(--text-dim);">~68 ft</span>
+        </div>
+      </div>
+      <div class="sec-hdr">GPS Drop</div>
+      <div class="sec-body">
+        <div class="toggle-row" style="margin-bottom:8px;">
+          <span class="toggle-label">Arm GPS Drop</span>
+          <div class="toggle" id="gps-toggle" onclick="toggleGPS(this)"></div>
+        </div>
+        <div class="gps-coords" id="gps-coords" style="display:none;">
+          Target: <b>37.8041° N · 122.4156° W</b><br/>
+          Distance: <span style="color:var(--text-dim);">1.8 nm · bearing 194°</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Click map to set GPS target coordinates</div>
+      </div>
+      <div class="sec-body" style="padding-top:0;">
+        <div class="drop-now-btn" id="drop-btn" onclick="doDrop()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 0 1 5 5c0 5-5 11-5 11S7 12 7 7a5 5 0 0 1 5-5z"/></svg>
+          DROP NOW
+        </div>
+      </div>
+    </div>
+
+    <!-- FIRES TAB -->
+    <div class="tab-pane" id="pane-fires">
+      <div class="sec-hdr">Spawn Custom Fire</div>
+      <div class="sec-body">
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;font-family:monospace;">COORDINATES</div>
+          <div class="row-2">
+            <div class="kbinput">37.8124° N</div>
+            <div class="kbinput">122.4142° W</div>
+          </div>
+          <div style="margin-top:6px;font-size:10px;color:var(--text-muted);">Or click map to place</div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-family:monospace;">FIRE SIZE</div>
+          <div class="slider-row">
+            <span>1</span>
+            <input type="range" min="1" max="10" value="5" id="fire-size-slider" oninput="updateFireSize(this.value)"/>
+            <span>10</span>
+          </div>
+          <div class="size-display" id="fire-size-display">Size: 5</div>
+        </div>
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <span class="toggle-label">Wind-driven spread</span>
+          <div class="toggle" onclick="this.classList.toggle('on');toast(this.classList.contains('on')?'Fire spread enabled':'Fire spread disabled')"></div>
+        </div>
+        <div class="row-2">
+          <div class="fsf-btn success" onclick="spawnFire()">Spawn Fire</div>
+          <div class="fsf-btn danger" onclick="toast('All fires cleared')">Clear All</div>
+        </div>
+        <div style="height:8px;"></div>
+        <div class="fsf-btn" onclick="toast('Random fire spawned nearby')">Random Nearby</div>
+      </div>
+      <div class="sec-hdr">Active Fires</div>
+      <div class="sec-body">
+        <div class="fire-row"><div class="fire-dot" style="background:var(--red);"></div><span class="fire-name">N California Complex</span><span class="fire-size-badge">SIZE 8</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
+        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Oregon Coast Range</span><span class="fire-size-badge">SIZE 5</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
+        <div class="fire-row"><div class="fire-dot" style="background:#f97316;"></div><span class="fire-name">Custom Fire #1</span><span class="fire-size-badge">SIZE 5</span><span style="font-size:10px;cursor:pointer;color:var(--text-muted);" onclick="toast('Fire removed')">✕</span></div>
+      </div>
+    </div>
+
+    <!-- MISSIONS TAB -->
+    <div class="tab-pane" id="pane-missions">
+      <div class="filter-row">
+        <div class="filter-btn active" onclick="setFilter(this,'all')">All</div>
+        <div class="filter-btn" onclick="setFilter(this,'wildfire')">Wildfire</div>
+        <div class="filter-btn" onclick="setFilter(this,'vehicle')">Vehicle</div>
+        <div class="filter-btn" onclick="setFilter(this,'structure')">Structure</div>
+      </div>
+      <div class="sec-body" id="mission-list">
+        <div class="mission-card" id="mc0" onclick="selectMission(0)">
+          <div class="mc-header"><div class="mc-name">Yosemite Valley Fire</div><div class="mc-type wildfire">Wildfire</div></div>
+          <div class="mc-loc">Yosemite NP, California, USA</div>
+          <div class="mc-stats"><span>☀ Daytime</span><span>Min drops: 4</span><span class="medal gold">🥇 Gold</span></div>
+        </div>
+        <div class="mission-card" id="mc1" onclick="selectMission(1)">
+          <div class="mc-header"><div class="mc-name">Highway Tanker Incident</div><div class="mc-type vehicle">Vehicle</div></div>
+          <div class="mc-loc">I-5 Corridor, Oregon, USA</div>
+          <div class="mc-stats"><span>🌆 Dusk</span><span>Min drops: 2</span><span class="medal silver">🥈 Silver</span></div>
+        </div>
+        <div class="mission-card" id="mc2" onclick="selectMission(2)">
+          <div class="mc-header"><div class="mc-name">Warehouse Fire — Porto</div><div class="mc-type structure">Structure</div></div>
+          <div class="mc-loc">Porto Industrial Zone, Portugal</div>
+          <div class="mc-stats"><span>🌙 Night</span><span>Min drops: 3</span><span style="color:var(--text-muted);font-size:10px;">Not completed</span></div>
+        </div>
+        <div class="mission-card" id="mc3" onclick="selectMission(3)">
+          <div class="mc-header"><div class="mc-name">Patagonia Crown Fire</div><div class="mc-type wildfire">Wildfire</div></div>
+          <div class="mc-loc">Torres del Paine, Chile</div>
+          <div class="mc-stats"><span>☀ Daytime</span><span>Min drops: 6</span><span class="medal bronze">🥉 Bronze</span></div>
+        </div>
+      </div>
+      <div id="mission-briefing" style="display:none;">
+        <div class="sec-hdr">Mission Briefing</div>
+        <div class="sec-body">
+          <div id="briefing-content" style="color:var(--text-dim);font-size:12px;line-height:1.6;margin-bottom:10px;"></div>
+          <div class="eff-bar-wrap"><div class="eff-bar" id="eff-bar" style="width:0%;background:var(--green);"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:monospace;margin-top:2px;margin-bottom:10px;"><span>Bronze</span><span>Silver</span><span>Gold</span></div>
+          <div class="row-2">
+            <div class="fsf-btn success" onclick="startMission()">Start Mission</div>
+            <div class="fsf-btn" onclick="closeBriefing()">Close</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-hdr">Logbook</div>
+      <div class="sec-body">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">3 missions completed · Best efficiency: 100%</div>
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:4px;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Yosemite Valley Fire</span><span class="medal gold">🥇 100%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Highway Tanker Incident</span><span class="medal silver">🥈 75%</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Patagonia Crown Fire</span><span class="medal bronze">🥉 62%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROPS TAB -->
+    <div class="tab-pane" id="pane-props">
+      <div class="sec-hdr">Simobject Selection</div>
+      <div class="sec-body">
+        <div class="row-2" style="margin-bottom:8px;">
+          <div class="fsf-btn accent" onclick="toast('Opening user entry…')">User Entry</div>
+          <div class="fsf-btn purple" onclick="openBrowser()">Browse List</div>
+        </div>
+        <div class="prop-current" id="prop-current">Microsoft_Truck_Fire_Long</div>
+      </div>
+      <div class="sec-hdr">Spawn Location</div>
+      <div class="sec-body">
+        <div style="margin-bottom:8px;">
+          <div class="row-2" style="margin-bottom:6px;">
+            <div class="kbinput">37.8124° N</div>
+            <div class="kbinput">122.4142° W</div>
+          </div>
+          <div class="kbinput" style="margin-bottom:6px;">Heading: 090°</div>
+          <div class="fsf-btn accent" style="margin-bottom:6px;" onclick="toast('Click map to place prop…')">Set by Map Click</div>
+          <div class="fsf-btn success" onclick="spawnProp()">Spawn Prop</div>
+        </div>
+      </div>
+      <div class="sec-hdr">Scene Management</div>
+      <div class="sec-body">
+        <div class="row-2" style="margin-bottom:6px;">
+          <div class="fsf-btn success" onclick="toast('Scene saved!')">Save Scene</div>
+          <div class="fsf-btn accent" onclick="toast('Loading saved scenes…')">Load Scene</div>
+        </div>
+        <div class="fsf-btn danger" onclick="toast('All props cleared')">Clear All Props</div>
+      </div>
+      <!-- Mini browser -->
+      <div id="prop-browser" style="display:none;">
+        <div class="sec-hdr">Simobject Browser</div>
+        <div class="sec-body">
+          <div class="row-2" style="margin-bottom:8px;">
+            <div class="fsf-btn accent" style="font-size:11px;" onclick="loadSource('2020')">MSFS 2020</div>
+            <div class="fsf-btn success" style="font-size:11px;" onclick="loadSource('2024')">MSFS 2024</div>
+            <div class="fsf-btn" style="font-size:11px;" onclick="toast('Scanning VFS…')">Scan VFS</div>
+          </div>
+          <div id="browser-cats" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"></div>
+          <div id="browser-items" style="max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
+          <div class="fsf-btn danger" style="margin-top:8px;" onclick="closeBrowser()">Close</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MP TAB -->
+    <div class="tab-pane" id="pane-mp">
+      <div class="sec-hdr">Session</div>
+      <div class="sec-body">
+        <div class="mp-session-box" style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-muted);font-family:monospace;margin-bottom:2px;">ACTIVE SESSION · PUBLIC · MSFS 2024</div>
+          <div class="mp-code">FSF-A7K2</div>
+          <div style="text-align:center;font-size:11px;color:var(--text-muted);">2 players connected</div>
+        </div>
+        <div class="row-2" style="margin-bottom:10px;">
+          <div class="fsf-btn" onclick="toast('Session ended')">End Session</div>
+          <div class="fsf-btn" onclick="toast('Code copied to clipboard')">Copy Code</div>
+        </div>
+      </div>
+      <div class="sec-hdr">Players</div>
+      <div class="sec-body">
+        <div class="mp-player"><div class="mp-avatar">TF</div><span class="mp-pname">TopFighter82</span><span class="mp-host-badge">HOST</span></div>
+        <div class="mp-player"><div class="mp-avatar" style="background:rgba(34,197,94,0.15);color:#86efac;">AW</div><span class="mp-pname">AirWarden_PNW</span><span class="mp-guest-badge">GUEST</span></div>
+      </div>
+      <div class="sec-hdr">Session Chat</div>
+      <div class="sec-body">
+        <div class="chat-area" id="chat-area">
+          <div class="chat-msg"><div class="sender">TopFighter82</div><div class="msg-text">heading to the Yosemite fire now</div></div>
+          <div class="chat-msg"><div class="sender">AirWarden_PNW</div><div class="msg-text">on approach, 2 min out</div></div>
+          <div class="chat-msg"><div class="sender">TopFighter82</div><div class="msg-text">I'll circle left, you come in from the east</div></div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button class="chat-send" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+      <div class="sec-hdr">Session Browser</div>
+      <div class="sec-body">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div class="qr-box">
+            <svg viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+              <rect width="21" height="21" fill="#fff"/>
+              <rect x="1" y="1" width="7" height="7" fill="#000"/>
+              <rect x="2" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="3" width="3" height="3" fill="#000"/>
+              <rect x="13" y="1" width="7" height="7" fill="#000"/>
+              <rect x="14" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="15" y="3" width="3" height="3" fill="#000"/>
+              <rect x="1" y="13" width="7" height="7" fill="#000"/>
+              <rect x="2" y="14" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="15" width="3" height="3" fill="#000"/>
+              <rect x="9" y="1" width="1" height="1" fill="#000"/>
+              <rect x="11" y="1" width="1" height="1" fill="#000"/>
+              <rect x="9" y="3" width="3" height="1" fill="#000"/>
+              <rect x="9" y="5" width="1" height="1" fill="#000"/>
+              <rect x="11" y="5" width="1" height="3" fill="#000"/>
+              <rect x="9" y="7" width="1" height="1" fill="#000"/>
+              <rect x="9" y="9" width="5" height="1" fill="#000"/>
+              <rect x="9" y="11" width="1" height="1" fill="#000"/>
+              <rect x="11" y="11" width="3" height="3" fill="#000"/>
+              <rect x="13" y="9" width="1" height="1" fill="#000"/>
+              <rect x="15" y="9" width="5" height="1" fill="#000"/>
+              <rect x="17" y="11" width="3" height="1" fill="#000"/>
+              <rect x="15" y="13" width="1" height="3" fill="#000"/>
+              <rect x="17" y="13" width="3" height="3" fill="#000"/>
+              <rect x="1" y="9" width="3" height="3" fill="#000"/>
+              <rect x="5" y="9" width="3" height="1" fill="#000"/>
+              <rect x="5" y="11" width="1" height="3" fill="#000"/>
+              <rect x="7" y="11" width="1" height="1" fill="#000"/>
+              <rect x="1" y="13" width="1" height="1" fill="#000"/>
+              <rect x="3" y="13" width="1" height="1" fill="#000"/>
+            </svg>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;line-height:1.5;">Scan QR to find active sessions and join from the browser</div>
+            <div class="fsf-btn accent" style="font-size:11px;" onclick="toast('Opening session browser…')">Open Browser</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO TAB -->
+    <div class="tab-pane" id="pane-info">
+      <div class="sec-hdr">Language</div>
+      <div class="sec-body">
+        <div style="display:flex;gap:5px;margin-bottom:5px;">
+          <div class="fsf-btn active" style="flex:1;font-size:11px;background:var(--red-dim);border-color:var(--red-border);" onclick="selectLang(this,'EN')">English</div>
+          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'IT')">Italiano</div>
+          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'DE')">Deutsch</div>
+        </div>
+        <div style="display:flex;gap:5px;">
+          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'FR')">Français</div>
+          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'ES')">Español</div>
+          <div class="fsf-btn" style="flex:1;font-size:11px;" onclick="selectLang(this,'PT')">Português</div>
+        </div>
+      </div>
+      <div class="sec-hdr">Instructions</div>
+      <div class="sec-body">
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <div class="info-section" onclick="toggleInfo(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
+              <span style="color:var(--text);font-size:12px;">Getting Started</span>
+              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
+            </div>
+            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Open the FS Fire panel from the toolbar. Select the Fires tab to load live VIIRS satellite hotspots, or choose a mission from the Missions tab. Head to the Drop tab to configure your aircraft's retardant system.</div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
+          <div class="info-section" onclick="toggleInfo(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
+              <span style="color:var(--text);font-size:12px;">Drop System</span>
+              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
+            </div>
+            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Use Drop Now for manual drops, or arm GPS Drop to auto-release over a map-selected target. Physics account for altitude, ground speed, and heading. For helicopters, enable the Bucket mode and scoop water from any lake or river below 25 ft AGL at under 10 kts.</div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
+          <div class="info-section" onclick="toggleInfo(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
+              <span style="color:var(--text);font-size:12px;">Multiplayer</span>
+              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
+            </div>
+            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Host a session from the MP tab and share your 8-digit code or QR link. All fires, prop objects, and drop VFX sync in real time across VATSIM, IVAO, and native MSFS multiplayer. Use session chat to coordinate with your crew.</div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.04);"></div>
+          <div class="info-section" onclick="toggleInfo(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px 0;">
+              <span style="color:var(--text);font-size:12px;">Missions</span>
+              <span style="color:var(--text-muted);font-size:14px;" class="chevron">▸</span>
+            </div>
+            <div class="info-body" style="display:none;color:var(--text-dim);font-size:11px;line-height:1.7;padding-bottom:8px;">Browse 325+ missions on the global map. Each mission tracks your drop efficiency — minimum drops divided by actual drops. Gold requires 80%+, Silver 67%+. Daily Challenges double your score. Missions can be hosted in multiplayer so the whole crew earns credit.</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-hdr">About</div>
+      <div class="sec-body">
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.7;">FS Fire v2.4 · SoCoSim<br/>MSFS 2020 &amp; MSFS 2024<br/><span style="color:var(--text-dim);">Live data: VIIRS NOAA-20 NRT</span></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /device -->
+
+<p class="demo-note">
+  Interactive panel demo — no simulator required.<br/>
+  The real panel runs inside MSFS with live satellite data &amp; SimConnect.
+</p>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var missions = [
+  {name:'Yosemite Valley Fire',type:'wildfire',loc:'Yosemite NP, California',time:'Daytime',drops:4,best:'100%',medal:'gold',briefing:'A fast-moving crown fire threatening the valley floor. Yosemite Village is at risk. Drop retardant along the fire\'s western flank to establish a containment line before it reaches the campgrounds.'},
+  {name:'Highway Tanker Incident',type:'vehicle',loc:'I-5 Corridor, Oregon',time:'Dusk',drops:2,best:'75%',medal:'silver',briefing:'A fuel tanker has overturned on a grade near a forested stretch of I-5. Road crews are on scene but flames are spreading toward the treeline. Two precision drops will contain the spread.'},
+  {name:'Warehouse Fire — Porto',type:'structure',loc:'Porto Industrial Zone, Portugal',time:'Night',drops:3,best:null,medal:null,briefing:'A large warehouse complex is burning in Porto\'s industrial waterfront. Fire is spreading between structures. Three drops are needed to hit the roof vents and cool the connecting passages.'},
+  {name:'Patagonia Crown Fire',type:'wildfire',loc:'Torres del Paine, Chile',time:'Daytime',drops:6,best:'62%',medal:'bronze',briefing:'A wind-driven crown fire in the Chilean national park. Steep terrain and gusting conditions make this a challenging sortie. Six drops required along the ridge to halt progress toward the park infrastructure.'}
+];
+var selectedMission = -1;
+
+function tab(id) {
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('[data-tab="'+id+'"]').classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click',function(){tab(t.getAttribute('data-tab'));});
+});
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.innerHTML = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){el.classList.remove('show');},2200);
+}
+
+function selectDrop(el,type){
+  el.parentNode.querySelectorAll('.sel-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  toast('Drop type: <b>'+type+'</b>');
+}
+function selectTank(el,type){
+  el.parentNode.querySelectorAll('.fsf-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  toast('Tank mode: <b>'+type+'</b>');
+}
+function selectHeli(el,type){
+  el.parentNode.querySelectorAll('.sel-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+  toast('Helicopter mode: <b>'+type+'</b>');
+}
+function toggleGPS(el){
+  el.classList.toggle('on');
+  var on = el.classList.contains('on');
+  document.getElementById('gps-coords').style.display = on ? 'block' : 'none';
+  toast(on ? 'GPS Drop armed · click map to set target' : 'GPS Drop disarmed');
+}
+var dropped = false;
+function doDrop(){
+  var btn = document.getElementById('drop-btn');
+  btn.classList.add('armed');
+  toast('<b>DROPPING</b> — retardant released');
+  document.getElementById('drop-mark').style.display='block';
+  setTimeout(function(){btn.classList.remove('armed');},600);
+  dropped = true;
+}
+function updateFireSize(v){document.getElementById('fire-size-display').textContent='Size: '+v;}
+function spawnFire(){toast('Fire spawned — Size '+document.getElementById('fire-size-slider').value);}
+function spawnProp(){toast('Prop spawned: '+document.getElementById('prop-current').textContent);}
+function toggleNorthUp(el){el.style.color=el.style.color?'':'var(--red)';toast(el.style.color?'North-up enabled':'Track-up enabled');}
+
+var declutterState=0;var declutterLabels=['All markers','Fires only','None'];
+function cycleDeclutter(el){declutterState=(declutterState+1)%3;toast('Map: <b>'+declutterLabels[declutterState]+'</b>');}
+
+function setFilter(el,type){
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
+}
+
+function selectMission(idx){
+  selectedMission=idx;
+  document.querySelectorAll('.mission-card').forEach(function(c){c.classList.remove('selected');});
+  document.getElementById('mc'+idx).classList.add('selected');
+  var m=missions[idx];
+  document.getElementById('briefing-content').innerHTML='<b style="color:var(--text);">'+m.name+'</b><br/><span style="color:var(--text-muted);font-size:10px;">'+m.loc+' · '+m.time+'</span><br/><br/>'+m.briefing+'<br/><br/><span style="color:var(--text-muted);">Min drops required: <b style="color:var(--text);">'+m.drops+'</b></span>'+(m.best?'<br/><span style="color:var(--text-muted);">Your best: <b style="color:var(--text);">'+m.best+'</b></span>':'');
+  var eff=m.medal==='gold'?95:m.medal==='silver'?72:m.medal==='bronze'?62:0;
+  document.getElementById('eff-bar').style.width=eff+'%';
+  document.getElementById('eff-bar').style.background=eff>=80?'var(--amber)':eff>=67?'#9ca3af':eff>0?'#cd7f32':'transparent';
+  document.getElementById('mission-briefing').style.display='block';
+  document.getElementById('mission-list').style.display='none';
+}
+function startMission(){toast('Mission started: <b>'+missions[selectedMission].name+'</b>');closeBriefing();}
+function closeBriefing(){document.getElementById('mission-briefing').style.display='none';document.getElementById('mission-list').style.display='block';}
+
+var propData={
+  '2020':{'Airplanes':['Bell 407','Cessna 172SP','Boeing 747-8i','Douglas DC-3'],'Groundvehicles':['ASO_Firetruck01','ASO_Ambulance_Japan','ASO_FuelTruck01_White'],'Animals':['GrizzlyBear','HumpbackWhale','BlackBear'],'Humans':['Pilot_Male_Casual','Marshaller_Female_Summer_African']},
+  '2024':{'Airplanes':['CL415 Firefighting','AT802 Firefighting','S-64F Skycrane Firefighting Configuration','Bell UH-1H Iroquois'],'Groundvehicles':['Microsoft_Truck_Fire_Long','Microsoft_Truck_Fire_Medium_Red','Microsoft_Aerial_Tank','Microsoft_Bulldozer'],'Animals':['PLeoLeoMale','UThibetanusMale','ECaballusMale'],'Humans':['Pilot_SR_Rescue','Pilot_SR_Cropdusting','Copilot_Glider_Passive']}
+};
+var currentSource='2020';
+function openBrowser(){document.getElementById('prop-browser').style.display='block';loadSource('2020');}
+function closeBrowser(){document.getElementById('prop-browser').style.display='none';}
+function loadSource(ver){
+  currentSource=ver;
+  var cats=document.getElementById('browser-cats');
+  var items=document.getElementById('browser-items');
+  cats.innerHTML='';items.innerHTML='';
+  Object.keys(propData[ver]).forEach(function(cat){
+    var b=document.createElement('div');
+    b.className='fsf-btn';b.style.cssText='flex:0 0 auto;font-size:10px;padding:4px 8px;';
+    b.textContent=cat;
+    b.onclick=function(){loadCat(cat,ver);};
+    cats.appendChild(b);
+  });
+}
+function loadCat(cat,ver){
+  var items=document.getElementById('browser-items');
+  items.innerHTML='';
+  propData[ver][cat].forEach(function(name){
+    var d=document.createElement('div');
+    d.className='fsf-btn';d.style.cssText='font-size:11px;text-align:left;justify-content:flex-start;padding:5px 8px;font-family:monospace;';
+    d.textContent=name;
+    d.onclick=function(){
+      document.getElementById('prop-current').textContent=name;
+      closeBrowser();
+      toast('Selected: <b>'+name+'</b>');
+    };
+    items.appendChild(d);
+  });
+}
+
+function sendChat(){
+  var input=document.getElementById('chat-input');
+  var text=input.value.trim();
+  if(!text)return;
+  var area=document.getElementById('chat-area');
+  var msg=document.createElement('div');
+  msg.className='chat-msg';
+  msg.innerHTML='<div class="sender" style="color:var(--green);">You</div><div class="msg-text">'+text+'</div>';
+  area.appendChild(msg);
+  area.scrollTop=area.scrollHeight;
+  input.value='';
+  toast('Message sent');
+}
+
+function selectLang(el,lang){
+  el.closest('.sec-body').querySelectorAll('.fsf-btn').forEach(function(b){b.style.background='';b.style.borderColor='';});
+  el.style.background='rgba(244,18,22,0.15)';el.style.borderColor='rgba(244,18,22,0.35)';
+  toast('Language: <b>'+lang+'</b> (demo only — full i18n in simulator)');
+}
+
+function toggleInfo(section){
+  var body=section.querySelector('.info-body');
+  var chev=section.querySelector('.chevron');
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  chev.textContent=open?'▸':'▾';
+}
+
+// Simulate map coordinate drift
+var lat=37.8124,lon=-122.4142;
+setInterval(function(){
+  lat+=((Math.random()-0.5)*0.001);
+  lon+=((Math.random()-0.5)*0.001);
+  document.getElementById('map-coords').textContent=lat.toFixed(4)+'° N · '+Math.abs(lon).toFixed(4)+'° W';
+},2000);
+
+// Fire tooltip on hover
+document.querySelectorAll('.fire-marker').forEach(function(fm){
+  var data=[
+    {title:'N CALIFORNIA COMPLEX',size:'SIZE 8',frp:'312 MW'},
+    {title:'OREGON COAST RANGE',size:'SIZE 5',frp:'87 MW'},
+    {title:'SIERRA NEVADA',size:'SIZE 3',frp:'41 MW'},
+    {title:'S CALIFORNIA SCRUB',size:'SIZE 9',frp:'487 MW'}
+  ];
+  var idx=parseInt(fm.getAttribute('data-fire'));
+  var tt=document.getElementById('fire-tooltip');
+  fm.addEventListener('mouseenter',function(){
+    tt.style.left=(fm.offsetLeft+14)+'px';
+    tt.style.top=(fm.offsetTop-20)+'px';
+    document.getElementById('tt-title').textContent=data[idx].title;
+    document.getElementById('tt-size').textContent=data[idx].size;
+    document.getElementById('tt-frp').textContent=data[idx].frp;
+    document.getElementById('tt-agl').textContent='850 ft AGL';
+    tt.classList.add('visible');
+  });
+  fm.addEventListener('mouseleave',function(){tt.classList.remove('visible');});
+});
+</script>
+</body>
+</html>
